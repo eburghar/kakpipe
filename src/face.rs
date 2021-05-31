@@ -1,6 +1,6 @@
 //! Convert ansi-code to kakoune face
 
-use crate::escape::{EscapeIterator, Token};
+use crate::escape::{EscapeIterator, Token, Mode};
 
 use yew_ansi::{get_sgr_segments, ColorEffect, SgrEffect};
 
@@ -67,11 +67,11 @@ pub fn print(ansi: &str) {
 		if face != "" {
 			print!("{{{}}}", face);
 		}
-		for token in EscapeIterator::new(txt) {
+		for token in EscapeIterator::new(txt, Mode::Brace) {
 			match token {
-				Token::Percent => print!("%%"),
+				Token::OpenBrace => print!("\\{{"),
 				Token::Str(txt) => print!("{}", txt),
-				Token::Block(txt) => print!("{}", txt),
+				_ => ()
 			}
 		}
 	}

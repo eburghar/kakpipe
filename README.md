@@ -1,9 +1,9 @@
 # Kakpipe
 
-`kakpipe` is a binary executable and a module for kakoune to display text with ansi color codes inside fifo buffer
-or info boxes. It works in 3 modes:
+`kakpipe` is a binary executable and a module for kakoune to display text with ansi color codes inside fifo buffers
+or info boxes.
 
-![kakpipe](kakpipe.png?raw=true "kakpipe buffer and info box")
+![kakpipe](kakpipe.png?raw=true "colors in kakoune fifo buffer and info box")
 
 ```
 Usage: kakpipe <command> [<args>]
@@ -56,7 +56,7 @@ plug "eburghar/kakpipe" do %{
 }
 ```
 
-## Usage
+## Examples
 
 Launch cargo in a new fifo buffer
 
@@ -70,16 +70,28 @@ Launch cargo in a new fifo buffer in the background
 :kakpipe-bg -- cargo build --color=always
 ```
 
-Shows a file which syntax coloring is handled by bat
+Show a file which syntax coloring is handled by bat
 
 ```
 :kakpipe -n main.rs -- bat -p --color=always src/main.rs
 ```
 
-Shows a calendar in an info box
+Show a rustdoc page in a buffer using [rusty-man](https://git.sr.ht/~ireas/rusty-man)
+
+```
+:kakpipe -- rusty-man --viewer rich std::string::String
+```
+
+Show a calendar in an info box
 
 ```sh
 :info -markup %sh{ TERM=xterm-256color cal --color=always | kakpipe faces }
+```
+
+Show diff of current in info box
+
+```sh
+:info -markup %sh{ git diff --color=always $kak_buffile | kakpipe faces }
 ```
 
 From there you can easily define new commands to eliminate travels between kakoune and terminal.
@@ -88,17 +100,23 @@ From there you can easily define new commands to eliminate travels between kakou
 define-command -override -params 1.. -docstring 'launch cargo with the given parameters inside kakoune' cargo %{
 	kakpipe -S -- cargo %arg{@} --color=always
 }
+```
 
+```
 define-command -params 0.. -docstring 'cargo check' cc %{
 	evaluate-commands cargo check %arg{@}
 }
+```
 
+```
 define-command -params 0.. -docstring 'cargo build' cb %{
 	evaluate-commands cargo build %arg{@}
 }
+```
 
-define-command -override -params 1.. -file-completion -docstring 'launch bat in a fifo buffer' bat %{
-	kakpipe -S -- bat -p --color=always %arg{@}
+```
+define-command -override -params 1 -docstring 'show a rustdoc page' rman %{
+	kakpipe -n %arg{1} -- rusty-man --viewer rich %arg{@}
 }
 ```
 

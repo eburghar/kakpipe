@@ -188,26 +188,29 @@ pub async fn stdin_fifo(
 pub async fn fifo(args: FifoArgs, fifo: PathBuf, socket: PathBuf) -> Result<()> {
 	// client connection to kakoune session
 	let mut client = Client::new(&args.session)?;
-	// if args.debug {
+	if args.debug {
 		client
 			.send_command(&format!(
 				"echo -debug +++ start {} {:?}",
 				&args.cmd, &args.args
 			))
 			.await?;
-	// }
+	}
+	// unless we use a double queue with an actor model and an atomic operation for switching
+	// queues after adding or removing ranges, mutex seems to be unavoidable, because we can
+	// produce and consume ranges at the same time and both task needs write access.
 	let sync = Arc::new(Mutex::new(SharedRanges::new()));
 	let task_stdin_fifo = stdin_fifo(&args, fifo, &mut client, Arc::clone(&sync));
 	let task_ranges_specs = range_specs(socket, Arc::clone(&sync));
 	// stops as soon as one future fails
 	task_stdin_fifo.try_join(task_ranges_specs).await?;
-	// if args.debug {
+	if args.debug {
 		client
 			.send_command(&format!(
 				"echo -debug +++ end {} {:?}",
 				&args.cmd, &args.args
 			))
 			.await?;
-	// }
+	}
 	Ok(())
 }
