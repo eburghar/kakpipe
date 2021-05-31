@@ -1,17 +1,7 @@
 # Kakpipe
 
-`kakpipe` is a binary executable and a module for [kakoune](https://kakoune.org/) to display text with ansi color
-codes inside fifo buffers or info boxes.
-
-Defining a new command just for interfacing an external command to kakoune as described in
-[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidocSometimes) feels cumbersome for
-simple workflows, and as fifo doesn't support ansi-code yet you generally end up travelling back and forth between
-kakoune and a shell just to launch a command that needs no interaction.
-
-`kakpipe.kak` just define 2 kakoune commands you can use to automate those simples workflows:
-- `kakpipe` which immediately switch to the buffer and let you see the result of the execution in real time with colors
-   rendering and
-- `kakpipe-bg` which just do everything in the background.
+`kakpipe` is a binary executable meant to be use with a module for [kakoune](https://kakoune.org/) `kakpipe.kak`
+to display text with ansi color codes inside fifo buffers or info boxes.
 
 ![kakpipe](kakpipe.png?raw=true "colors in kakoune fifo buffer and info box")
 
@@ -34,6 +24,18 @@ Commands:
   faces             Forward stdin to stdout with ansi color codes converted to
                     kakoune face definitions
 ```
+
+Defining a new command just for interfacing an external command to kakoune as described in
+[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidocSometimes) feels cumbersome for
+simple workflows, and as fifo doesn't support ansi-code yet you generally end up traveling back and forth between
+kakoune and a shell just to launch a command that needs no interaction.
+
+`kakpipe.kak` just define 2 kakoune commands built on top of `kakpipe`, you can use to automate those simples
+workflows without leaving the comfort of your editor and without sacrificing readability:
+- `kakpipe` which immediately switch to the buffer and let you see the result of the execution in real time with colors
+   rendering and
+- `kakpipe-bg` which just do everything in the background.
+
 
 This utility would be voided if kakoune implements an `-ansi` argument on `edit -fifo` or `info` commands.
 
@@ -103,7 +105,7 @@ Show diff of current file in info box
 
 ## Building new Commands
 
-Mimicing shell commands inside kakoune are generally oneliners
+Mimicking shell commands inside kakoune are generally one-liners
 
 ```
 define-command -override -params 1.. -docstring 'launch cargo with the given parameters inside kakoune' cargo %{
