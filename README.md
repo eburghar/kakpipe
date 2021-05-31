@@ -1,9 +1,9 @@
 # Kakpipe
 
+![kakpipe](kakpipe.png?raw=true "colors in kakoune fifo buffer and info box")
+
 `kakpipe` is a binary executable meant to be use with a module for [kakoune](https://kakoune.org/) `kakpipe.kak`
 to display text with ansi color codes inside fifo buffers or info boxes.
-
-![kakpipe](kakpipe.png?raw=true "colors in kakoune fifo buffer and info box")
 
 ```
 Usage: kakpipe <command> [<args>]
@@ -35,7 +35,6 @@ workflows without leaving the comfort of your editor and without sacrificing rea
 - `kakpipe` which immediately switch to the buffer and let you see the result of the execution in real time with colors
    rendering and
 - `kakpipe-bg` which just do everything in the background.
-
 
 This utility would be voided if kakoune implements an `-ansi` argument on `edit -fifo` or `info` commands.
 

@@ -38,7 +38,7 @@ fn main() -> Result<()> {
 
 			// Send kakoune initialization commands on stdout
 			println!(
-				"edit! -fifo {fifo_path}{scroll} *{buffer_name}*\n\
+				"edit! -fifo {fifo_path}{scroll}{readonly} *{buffer_name}*\n\
 				hook buffer BufClose .* %{{ nop %sh{{ rm -f {fifo_path} }} }}\n\
 				add-highlighter buffer/kakpipe ranges kakpipe_color_ranges\n\
 				hook -group kakpipe buffer BufReadFifo .* %{{ evaluate-commands -draft %sh{{ kakpipe range-specs {socket_path} $kak_hook_param }} }}\n\
@@ -46,6 +46,7 @@ fn main() -> Result<()> {
 				fifo_path=fifo_path.to_str().unwrap(),
 				socket_path=socket_path.to_str().unwrap(),
 				buffer_name=&buffer_name,
+				readonly=if args.rw { "" } else { " -readonly"},
 				scroll=if args.scroll { " -scroll" } else { "" }
 			);
 

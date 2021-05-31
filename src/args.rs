@@ -33,6 +33,10 @@ pub struct FifoArgs {
 	#[argh(switch, short = 'd')]
 	pub debug: bool,
 
+	/// by default buffer are readonly. turns the buffer editable
+	#[argh(switch, short = 'w')]
+	pub rw: bool,
+
 	/// scroll down fifo buffer as new content arrives
 	#[argh(switch, short = 'S')]
 	pub scroll: bool,
