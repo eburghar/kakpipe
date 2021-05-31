@@ -46,7 +46,8 @@ fn main() -> Result<()> {
 				fifo_path=fifo_path.to_str().unwrap(),
 				socket_path=socket_path.to_str().unwrap(),
 				buffer_name=&buffer_name,
-				readonly=if args.rw { "" } else { " -readonly"},
+				// readonly=if args.rw { "" } else { " -readonly"}, // BUG? apparently every buffer turn readonly after this
+				readonly = "",
 				scroll=if args.scroll { " -scroll" } else { "" }
 			);
 

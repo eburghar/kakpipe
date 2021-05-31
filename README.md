@@ -2,8 +2,8 @@
 
 ![kakpipe](kakpipe.png?raw=true "colors in kakoune fifo buffer and info box")
 
-`kakpipe` is a binary executable meant to be use with a module for [kakoune](https://kakoune.org/) `kakpipe.kak`
-to display text with ansi color codes inside fifo buffers or info boxes.
+`kakpipe` is a binary executable meant to be use with the included [kakoune](https://kakoune.org/) module
+`kakpipe.kak`, to display text with ansi color codes inside fifo buffers or info boxes.
 
 ```
 Usage: kakpipe <command> [<args>]
@@ -66,6 +66,8 @@ plug "eburghar/kakpipe" do %{
 
 ## Examples
 
+### Buffers
+
 Launch cargo build in a new fifo buffer
 
 ```
@@ -90,6 +92,8 @@ Show a rustdoc page in a buffer using [rusty-man](https://git.sr.ht/~ireas/rusty
 :kakpipe -- rusty-man --viewer rich std::string::String
 ```
 
+### Info boxes
+
 Show a calendar in an info box
 
 ```sh
@@ -113,22 +117,31 @@ define-command -override -params 1.. -docstring 'launch cargo with the given par
 ```
 
 ```
+define-command -override -params 1 -docstring 'show a rustdoc page' rman %{
+	kakpipe -n %arg{1} -- rusty-man --viewer rich %arg{@}
+}
+```
+
+As well as for aliasing commands (shell like aliases)
+
+```
 define-command -params 0.. -docstring 'cargo check' cc %{
-	evaluate-commands cargo check %arg{@}
+	cargo check %arg{@}
 }
 ```
 
 ```
 define-command -params 0.. -docstring 'cargo build' cb %{
-	evaluate-commands cargo build %arg{@}
+	cargo build %arg{@}
 }
 ```
 
 ```
-define-command -override -params 1 -docstring 'show a rustdoc page' rman %{
-	kakpipe -n %arg{1} -- rusty-man --viewer rich %arg{@}
+define-command -docstring 'cargo install' ci %{
+	cargo install --path . --root %sh{ echo -n ~/.local }
 }
 ```
+
 
 ## References
 
