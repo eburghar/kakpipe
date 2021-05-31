@@ -3,6 +3,8 @@
 `kakpipe` is a binary executable and a module for kakoune to display text with ansi color codes inside fifo buffer
 or info boxes. It works in 3 modes:
 
+![kakpipe](kakpipe.png?raw=true "kakpipe buffer and info box")
+
 ```
 Usage: kakpipe <command> [<args>]
 
@@ -74,10 +76,10 @@ Shows a file which syntax coloring is handled by bat
 :kakpipe -n main.rs -- bat -p --color=always src/main.rs
 ```
 
-Show a file which syntax coloring is handled by bat in an info box
+Shows a calendar in an info box
 
 ```sh
-:info -markup %sh{ bat -p --color=always src/lib.rs | kakpipe faces }
+:info -markup %sh{ TERM=xterm-256color cal --color=always | kakpipe faces }
 ```
 
 From there you can easily define new commands to eliminate travels between kakoune and terminal.
