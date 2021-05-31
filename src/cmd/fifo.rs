@@ -1,0 +1,213 @@
+use anyhow::{anyhow, Context, Result};
+use async_process::{Command, Stdio};
+use async_std::{
+	fs::{self, OpenOptions},
+	io::{
+		prelude::{ReadExt, BufReadExt, WriteExt},
+		BufReader,
+	},
+	os::unix::net::UnixListener,
+	prelude::FutureExt,
+	stream::StreamExt,
+	sync::Mutex,
+};
+use kakpipe::command::Client;
+use std::{convert::TryFrom, env, path::PathBuf, sync::Arc};
+use yew_ansi::get_sgr_segments;
+
+use crate::{
+	args::FifoArgs,
+	range_specs::{Pos, Range, Selection, SharedRanges},
+};
+
+/// Serve all accumulated range_specs definition to stdout through a unix socket
+pub async fn range_specs(socket: PathBuf, sync: Arc<Mutex<SharedRanges>>) -> Result<()> {
+	let listener = UnixListener::bind(&socket)
+		.await
+		.context("error listening to range_specs socket")?;
+	let mut incoming = listener.incoming();
+	let mut response = String::new();
+
+	while let Some(stream) = incoming.next().await {
+		let mut stream = stream?;
+
+		// wait for the range to be sent by client
+		let mut len = [0u8; 1];
+		stream.read_exact(&mut len).await?;
+		let mut range = vec![0u8; len[0] as usize];
+		stream.read_exact(&mut range).await?;
+
+		// this is the selection kakoune wants the ranges for
+		let selection = String::from_utf8_lossy(&range).parse::<Selection>()?;
+		// eprintln!("selection: {}", &selection);
+
+		// reuse the same string between connexion
+		response.clear();
+		let fifo_end;
+		let mut empty_ranges;
+		// release the lock after this block
+		{
+			let mut sync = sync.lock().await;
+			// get fifo state and ranges emptyness
+			fifo_end = sync.fifo_end;
+			empty_ranges = sync.ranges.len() == 0;
+			if ! empty_ranges {
+				// return all accumulated ranges lower or equal to selection
+				let mut i = 0;
+				for range in sync.ranges.iter() {
+					// don't serve ranges for lines that kakoune didn't display yet
+					if selection.is_valid() && range.selection.1 > selection.1 {
+						break;
+					}
+					// separate ranges by space
+					if i != 0 {
+						response.push(' ');
+					}
+					response.push_str(&format!("{}", range));
+					i += 1;
+				}
+				// remove ranges already sent (for_each consumes the iterator and the drained items)
+				sync.ranges.drain(0..i).for_each(|_| ());
+				// reevaluate ranges emptyness to stop the loop if fifo has been closed
+				empty_ranges = sync.ranges.len() == 0;
+			}
+		}
+		// eprintln!("response: {}", &response);
+		stream.write_all(response.as_bytes()).await?;
+		if fifo_end && empty_ranges {
+			break;
+		}
+	}
+
+	// remove the socket file now that all ranges have been consumed and fifo has been closed
+	fs::remove_file(socket).await?;
+	Ok(())
+}
+
+/// Forward stdin to stdout after removing all ansi color codes. Range_specs are written in a data structure
+/// shared between tasks
+pub async fn stdin_fifo(
+	args: &FifoArgs,
+	fifo: PathBuf,
+	client: &mut Client,
+	sync: Arc<Mutex<SharedRanges>>,
+) -> Result<()> {
+	// async read from command and async write to fifo
+	let mut fifo_file = OpenOptions::new().write(true).open(fifo).await?;
+
+	let mut child = Command::new(&args.cmd)
+		.args(&args.args)
+		.stderr(Stdio::piped())
+		.stdout(Stdio::piped())
+		.current_dir(env::current_dir().unwrap())
+		.spawn()?;
+
+	let mut stdout_reader = BufReader::new(child.stdout.take().unwrap()).lines();
+	let mut stderr_reader = BufReader::new(child.stderr.take().unwrap()).lines();
+	let mut l = 1; // line number
+	let mut start = 1; // column
+	if args.debug {
+		// stdout goes to fifo
+		let fifo_task = async {
+			// TODO: how to deal with ansi-codes that spans several lines ?
+			while let Some(line) = stdout_reader.next().await {
+				let line = line?;
+				for (effect, txt) in get_sgr_segments(&line) {
+					let len = u32::try_from(txt.len()).unwrap();
+					let end = if len > 1 { start + len - 1 } else { start + len };
+					if let Some(range) = Range::new(Selection(Pos(l, start), Pos(l, end)), effect) {
+						let mut sync = sync.lock().await;
+						sync.ranges.push_back(range);
+					}
+					let _ = fifo_file.write_all(txt.as_bytes()).await;
+					start = if len > 1 { end + 1 } else { end };
+				}
+				let _ = fifo_file.write_all(b"\n").await;
+				let _ = fifo_file.flush().await;
+				l += 1;
+				start = 1;
+			}
+			Ok::<(), anyhow::Error>(())
+		};
+
+		// stderr goes to debug buffer
+		let debug_task = async {
+			while let Some(line) = stderr_reader.next().await {
+				let line = line?;
+				// debug buffer doesn't support markup otherwise we would have inserted faces
+				// to get colored debug outputs
+				client
+					.send_command(&format!("echo -debug {}", line))
+					.await?;
+			}
+			Ok::<(), anyhow::Error>(())
+		};
+
+		// read from stdout and stderr concurrently
+		fifo_task.try_race(debug_task).await?;
+	} else {
+		// TODO: deduplicate code with generics ?
+		// TODO: we probably lose one line if both stdout and stderr completes at the same time
+		// reads from stdout and stderr simultaneously
+		while let Some(line) = stdout_reader.next().race(stderr_reader.next()).await {
+			let line = line?;
+			for (effect, txt) in get_sgr_segments(&line) {
+				let len = u32::try_from(txt.len()).unwrap();
+				let end = if len > 1 { start + len - 1 } else { start + len };
+				if let Some(range) = Range::new(Selection(Pos(l, start), Pos(l, end)), effect) {
+					let mut sync = sync.lock().await;
+					sync.ranges.push_back(range);
+				}
+				let _ = fifo_file.write_all(txt.as_bytes()).await;
+				start = if len > 1 { end + 1 } else { end };
+			}
+			let _ = fifo_file.write_all(b"\n").await;
+			let _ = fifo_file.flush().await;
+			l += 1;
+			start = 1;
+		}
+	}
+
+	// signal the range_specs task that we have processed all output
+	{
+		let _ = fifo_file.sync_all().await;
+		let mut sync = sync.lock().await;
+		sync.fifo_end = true;
+	}
+
+	if l >= 1 {
+		Ok(())
+	} else {
+		// return an error to stop all tasks as there is nothing to do
+		Err(anyhow!("no output"))
+	}
+}
+
+/// Print kakoune initialization command for displaying the corresponding fifo buffer then
+/// combine stdin_fifo and range_specs
+pub async fn fifo(args: FifoArgs, fifo: PathBuf, socket: PathBuf) -> Result<()> {
+	// client connection to kakoune session
+	let mut client = Client::new(&args.session)?;
+	// if args.debug {
+		client
+			.send_command(&format!(
+				"echo -debug +++ start {} {:?}",
+				&args.cmd, &args.args
+			))
+			.await?;
+	// }
+	let sync = Arc::new(Mutex::new(SharedRanges::new()));
+	let task_stdin_fifo = stdin_fifo(&args, fifo, &mut client, Arc::clone(&sync));
+	let task_ranges_specs = range_specs(socket, Arc::clone(&sync));
+	// stops as soon as one future fails
+	task_stdin_fifo.try_join(task_ranges_specs).await?;
+	// if args.debug {
+		client
+			.send_command(&format!(
+				"echo -debug +++ end {} {:?}",
+				&args.cmd, &args.args
+			))
+			.await?;
+	// }
+	Ok(())
+}
