@@ -112,7 +112,7 @@ Mimicking shell commands inside kakoune are generally one-liners
 
 ```
 define-command -override -params 1.. -docstring 'launch cargo with the given parameters inside kakoune' cargo %{
-	kakpipe -S -- cargo %arg{@} --color=always
+	kakpipe -S -- cargo --color=always %arg{@}
 }
 ```
 

@@ -13,9 +13,10 @@ use async_std::task::block_on;
 use daemonize::Daemonize;
 use nix::{sys::stat, unistd};
 use std::{env, fs, time::SystemTime};
+use structopt::StructOpt;
 
 fn main() -> Result<()> {
-	let args: Args = argh::from_env();
+	let args = Args::from_args();
 	match args.mode {
 		Mode::Fifo(args) => {
 			let tmp_dir = env::temp_dir().join("kakpipe");

@@ -1,16 +1,16 @@
 [package]
 name = "kakpipe"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Éric BURGHARD <eric@itsufficient.me>"]
 edition = "2018"
 
 [dependencies]
 anyhow = "1.0.40"
-argh = "0.1.4"
 async-process = "1.1.0"
 async-std = { version="1.9.0", features=["unstable"] }
 byteorder = "1.4.3"
 daemonize = "0.4.1"
 nix = "0.20.0"
 rand = "0.8.3"
+structopt = "0.3.21"
 yew-ansi = { git = "https://github.com/eburghar/yew-ansi.git", default-features = false }
