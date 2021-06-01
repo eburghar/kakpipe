@@ -60,7 +60,7 @@ with [plug.kak](https://github.com/andreyorst/plug.kak)
 
 ```
 plug "eburghar/kakpipe" do %{
-	cargo install --force --path . --root ~/.local
+	cargo install --force --path . --root %sh{ echo -n ~/.local }
 }
 ```
 
@@ -137,7 +137,7 @@ define-command -params 0.. -docstring 'cargo build' cb %{
 ```
 
 ```
-define-command -docstring 'cargo install' ci %{
+define-command -docstring 'cargo install current directory crate to ~/.local/bin' ci %{
 	cargo install --path . --root %sh{ echo -n ~/.local }
 }
 ```
