@@ -6,7 +6,7 @@ define-command -docstring "Forwards outputs of the command given as parameter to
 	evaluate-commands %sh{ kakpipe fifo -s $kak_session "$@" }
 }
 
-define-command -docstring "Forwards outputs of the command given as parameter to a new fifo buffer in the background and highlights text based on ansi color codes" kakpipe-background -params 1.. %{
+define-command -docstring "Forwards outputs of the command given as parameter to a new fifo buffer in the background and highlights text based on ansi color codes" kakpipe-bg -params 1.. %{
 	evaluate-commands -draft %sh{ kakpipe fifo -s $kak_session "$@" }
 }
 
