@@ -391,14 +391,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "kak"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-std",
+ "byteorder",
+ "yew-ansi",
+]
+
+[[package]]
 name = "kakpipe"
-version = "0.1.2"
+version = "0.1.4"
 dependencies = [
  "anyhow",
  "async-process",
  "async-std",
  "byteorder",
  "daemonize",
+ "kak",
  "nix",
  "rand",
  "structopt",

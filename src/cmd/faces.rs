@@ -1,4 +1,4 @@
-use kakpipe::face;
+use kak::{face, escape::Mode};
 
 use anyhow::Result;
 use async_std::io;
@@ -11,7 +11,7 @@ pub async fn faces() -> Result<()> {
 		if size == 0 {
 			break;
 		}
-		face::print(&line);
+		face::print(&line, Mode::Brace);
 		line.clear();
 	}
 	Ok(())

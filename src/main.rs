@@ -40,23 +40,27 @@ fn main() -> Result<()> {
 			// Send kakoune initialization commands on stdout
 			println!(
 				"edit! -fifo {fifo_path}{scroll}{readonly} *{buffer_name}*\n\
-				hook buffer BufClose .* %{{ nop %sh{{ rm -f {fifo_path} }} }}\n\
-				add-highlighter buffer/kakpipe ranges kakpipe_color_ranges\n\
-				hook -group kakpipe buffer BufReadFifo .* %{{ evaluate-commands -draft %sh{{ kakpipe range-specs {socket_path} $kak_hook_param }} }}\n\
-				hook -group kakpipe buffer BufCloseFifo .* %{{ evaluate-commands -draft %sh{{ kakpipe range-specs {socket_path} }} }}",
+				add-highlighter -override buffer/kakpipe ranges kakpipe_color_ranges\n\
+				hook buffer BufClose \\*{buffer_name}\\* %{{ nop %sh{{ rm -f {fifo_path} }} }}\n\
+				try %{{ remove-hooks buffer kakpipe }}\n\
+				hook -group kakpipe buffer BufReadFifo .* %{{ evaluate-commands %sh{{ kakpipe range-specs {socket_path} $kak_hook_param }} }}",
 				fifo_path=fifo_path.to_str().unwrap(),
 				socket_path=socket_path.to_str().unwrap(),
 				buffer_name=&buffer_name,
 				// readonly=if args.rw { "" } else { " -readonly"}, // BUG? apparently every buffer turn readonly after this
 				readonly = "",
-				scroll=if args.scroll { " -scroll" } else { "" }
+				scroll=if args.scroll { " -scroll" } else { "" },
 			);
+			// set buffer options
+			for (name, value) in &args.opts {
+				println!("set-option buffer {} {}", name, value);
+			}
 
-			// let stdout = fs::File::create("/tmp/daemon.out").unwrap();
-			// let stderr = fs::File::create("/tmp/daemon.err").unwrap();
+			let stdout = fs::File::create("/tmp/daemon.out").unwrap();
+			let stderr = fs::File::create("/tmp/daemon.err").unwrap();
 			let daemon = Daemonize::new()
-				// .stdout(stdout)
-				// .stderr(stderr)
+				.stdout(stdout)
+				.stderr(stderr)
 				.working_directory(env::current_dir().unwrap());
 			// Detach
 			daemon.start()?;

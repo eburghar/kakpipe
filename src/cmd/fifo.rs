@@ -11,13 +11,13 @@ use async_std::{
 	stream::StreamExt,
 	sync::Mutex,
 };
-use kakpipe::command::Client;
+use kak::{command::Client, range::{Pos, Range, Selection}};
 use std::{convert::TryFrom, env, path::PathBuf, sync::Arc};
 use yew_ansi::get_sgr_segments;
 
 use crate::{
 	args::FifoArgs,
-	range_specs::{Pos, Range, Selection, SharedRanges},
+	range_specs::SharedRanges,
 };
 
 /// Serve all accumulated range_specs definition to stdout through a unix socket

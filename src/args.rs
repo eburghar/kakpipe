@@ -1,4 +1,5 @@
 use structopt::StructOpt;
+use std::error::Error;
 
 /// Utility to display text with ansi color codes inside kakoune fifo buffers or info boxes
 #[derive(StructOpt)]
@@ -15,12 +16,26 @@ pub enum Mode {
 	Faces(FacesArgs),
 }
 
+/// Parse a single key-value pair
+fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error>>
+where
+    T: std::str::FromStr,
+    T::Err: Error + 'static,
+    U: std::str::FromStr,
+    U::Err: Error + 'static,
+{
+    let pos = s
+        .find('=')
+        .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{}`", s))?;
+    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+}
+
 /// Return kakoune commands for opening a fifo buffer and initializing highlighters for ansi-codes, then detach itself, forward
 /// command output to the fifo, and serve range-specs definitions through a unix socket that can be consumed to stdout
 /// with the `range-specs` subcommand.
 #[derive(StructOpt)]
 pub struct FifoArgs {
-	/// by default buffer are readonly. turns the buffer editable
+	/// Turns the buffer editable. by default they are readonly
 	#[structopt(long, short = "w")]
 	pub rw: bool,
 
@@ -39,6 +54,10 @@ pub struct FifoArgs {
 	/// fifo buffer name
 	#[structopt(long, short = "n")]
 	pub name: Option<String>,
+
+	/// options to set with name=value in the buffer scope
+    #[structopt(short = "D", parse(try_from_str = parse_key_val), number_of_values = 1)]
+    pub opts: Vec<(String, String)>,
 
    	/// command to spawn
 	pub cmd: String,
