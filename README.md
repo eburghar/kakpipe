@@ -26,11 +26,11 @@ SUBCOMMANDS:
 ```
 
 Defining a new command just for interfacing an external tool to kakoune as described in
-[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidocSometimes) feels cumbersome
-for simple workflows, and as fifo doesn't support ansi-code yet, you generally end up just using a shell,
-traveling back and forth to kakoune, just to launch a command that needs no interaction.
+[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidoc) feels cumbersome for simple
+workflows, and as fifo doesn't support ansi-code yet, you generally end up using a shell, traveling back and forth
+to kakoune just to launch a command that needs no interaction.
 
-`kakpipe.kak` just define 2 kakoune commands built on top of `kakpipe`, you can use to automate those simples
+`kakpipe.kak` defines 2 kakoune commands built on top of `kakpipe` you can use to automate those simples
 workflows without leaving the comfort of your editor and without sacrificing readability:
 - `kakpipe` which immediately switch to the buffer and let you see the result of the execution in real time with colors
    rendering and
@@ -144,15 +144,14 @@ define-command -docstring 'cargo install current directory crate to ~/.local/bin
 
 ## Integrate `kakpipe` to your module
 
-You can easily add custom behavior to the fifo buffer created by `kakpipe` by using one or several
-`-D name=value` command line arguments that can be used to setup options values in the fifo buffer scope.
+You can easily add custom behavior to the fifo buffer created by `kakpipe` by using one or several `-D name=value`
+command line arguments to setup options values in the fifo buffer scope.
 
 You can for instance make a module defining custom mappings for a given filetype and use `-D filetype=myfiletype`
-with `kakpipe` inside the plugin to automatically setup the file type of the created fifo buffer. This allows you
-to remove the mkfifo boilerplate, and have syntax highlighting coming directly from the external tool.
+with `kakpipe` inside the plugin to automatically setup the file type of the created fifo buffer.
 
-The `-n` options allows to use the same buffer at each command invocation. By default kakpipe always open new
-buffer which names are formed by the command name + 1st argument + a timestamp.
+The `-n` options allows to use the same buffer (name) at each command invocation. By default kakpipe always open
+new buffer which names are formed by the command name + 1st argument + a timestamp.
 
 ```
 define-command -override -params 1.. -docstring 'launch cargo with the given parameters inside kakoune' cargo %{
