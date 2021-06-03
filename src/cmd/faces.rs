@@ -1,4 +1,4 @@
-use kak::{face, escape::Mode};
+use kak::{escape::Mode, face};
 
 use anyhow::Result;
 use async_std::io;

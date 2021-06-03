@@ -3,7 +3,7 @@ use async_process::{Command, Stdio};
 use async_std::{
 	fs::{self, OpenOptions},
 	io::{
-		prelude::{ReadExt, BufReadExt, WriteExt},
+		prelude::{BufReadExt, ReadExt, WriteExt},
 		BufReader,
 	},
 	os::unix::net::UnixListener,
@@ -11,14 +11,14 @@ use async_std::{
 	stream::StreamExt,
 	sync::Mutex,
 };
-use kak::{command::Client, range::{Pos, Range, Selection}};
+use kak::{
+	command::Client,
+	range::{Pos, Range, Selection},
+};
 use std::{convert::TryFrom, env, path::PathBuf, sync::Arc};
 use yew_ansi::get_sgr_segments;
 
-use crate::{
-	args::FifoArgs,
-	range_specs::SharedRanges,
-};
+use crate::{args::FifoArgs, range_specs::SharedRanges};
 
 /// Serve all accumulated range_specs definition to stdout through a unix socket
 pub async fn range_specs(socket: PathBuf, sync: Arc<Mutex<SharedRanges>>) -> Result<()> {
@@ -51,7 +51,7 @@ pub async fn range_specs(socket: PathBuf, sync: Arc<Mutex<SharedRanges>>) -> Res
 			// get fifo state and ranges emptyness
 			fifo_end = sync.fifo_end;
 			empty_ranges = sync.ranges.len() == 0;
-			if ! empty_ranges {
+			if !empty_ranges {
 				// return all accumulated ranges lower or equal to selection
 				let mut i = 0;
 				for range in sync.ranges.iter() {
@@ -114,7 +114,11 @@ pub async fn stdin_fifo(
 				let line = line?;
 				for (effect, txt) in get_sgr_segments(&line) {
 					let len = u32::try_from(txt.len()).unwrap();
-					let end = if len > 1 { start + len - 1 } else { start + len };
+					let end = if len > 1 {
+						start + len - 1
+					} else {
+						start + len
+					};
 					if let Some(range) = Range::new(Selection(Pos(l, start), Pos(l, end)), effect) {
 						let mut sync = sync.lock().await;
 						sync.ranges.push_back(range);
@@ -153,7 +157,11 @@ pub async fn stdin_fifo(
 			let line = line?;
 			for (effect, txt) in get_sgr_segments(&line) {
 				let len = u32::try_from(txt.len()).unwrap();
-				let end = if len > 1 { start + len - 1 } else { start + len };
+				let end = if len > 1 {
+					start + len - 1
+				} else {
+					start + len
+				};
 				if let Some(range) = Range::new(Selection(Pos(l, start), Pos(l, end)), effect) {
 					let mut sync = sync.lock().await;
 					sync.ranges.push_back(range);

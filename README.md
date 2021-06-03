@@ -25,10 +25,10 @@ SUBCOMMANDS:
     range-specs    Consume all available range-specs up to a given selection range from a given unix socket
 ```
 
-Defining a new command just for interfacing an external command to kakoune as described in
-[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidocSometimes) feels cumbersome for
-simple workflows, and as fifo doesn't support ansi-code yet, you generally end up traveling back and forth between
-kakoune and a shell just to launch a command that needs no interaction.
+Defining a new command just for interfacing an external tool to kakoune as described in
+[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidocSometimes) feels cumbersome
+for simple workflows, and as fifo doesn't support ansi-code yet, you generally end up just using a shell,
+traveling back and forth to kakoune, just to launch a command that needs no interaction.
 
 `kakpipe.kak` just define 2 kakoune commands built on top of `kakpipe`, you can use to automate those simples
 workflows without leaving the comfort of your editor and without sacrificing readability:
@@ -68,19 +68,19 @@ plug "eburghar/kakpipe" do %{
 
 ### Buffers
 
-Launch cargo build in a new fifo buffer
+Launch `cargo build` in a new fifo buffer
 
 ```
 :kakpipe -S -- cargo build --color=always
 ```
 
-Launch cargo build in a new fifo buffer in the background
+Launch `cargo build` in a new fifo buffer in the *background*
 
 ```
 :kakpipe-bg -- cargo build --color=always
 ```
 
-Show a file with syntax coloring managed by [bat](https://github.com/sharkdp/bat)
+Show a file with syntax coloring managed by [bat](https://github.com/sharkdp/bat) in a fifo buffer named `*main.rs*`
 
 ```
 :kakpipe -n main.rs -- bat -p --color=always src/main.rs
@@ -96,13 +96,13 @@ Show a rustdoc page in a buffer using [rusty-man](https://git.sr.ht/~ireas/rusty
 
 Show a calendar in an info box
 
-```sh
+```
 :info -markup %sh{ TERM=xterm-256color cal --color=always | kakpipe faces }
 ```
 
 Show diff of current file in info box
 
-```sh
+```
 :info -markup %sh{ git diff --color=always $kak_buffile | kakpipe faces }
 ```
 
@@ -112,7 +112,7 @@ Mimicking shell commands inside kakoune are generally one-liners.
 
 ```
 define-command -override -params 1.. -docstring 'launch cargo with the given parameters inside kakoune' cargo %{
-	kakpipe -S -D filetype=cargo -- cargo --color=always %arg{@}
+	kakpipe -S -- cargo --color=always %arg{@}
 }
 ```
 
@@ -142,15 +142,17 @@ define-command -docstring 'cargo install current directory crate to ~/.local/bin
 }
 ```
 
-## Integrate to your plugin
+## Integrate `kakpipe` to your module
 
-You can easily add custom behavior to the fifo buffer created by `kakpipe` using `-D name=value`. This will
-setup new option values in the buffer scope. For instance just by setting the `filetype` option you can implement
-some key mapping to jump to cargo errors much like [kakoune-cargo](https://gitlab.com/Screwtapello/kakoune-cargo)
-do, but without having to define syntax for coloring and without mkfifo boilerplate.
+You can easily add custom behavior to the fifo buffer created by `kakpipe` by using one or several
+`-D name=value` command line arguments that can be used to setup options values in the fifo buffer scope.
 
-The `-n` options allows to use the same buffer. By default kakpipe always open new buffer which names
-are formed by the command name + 1st argument + a timestamp.
+You can for instance make a module defining custom mappings for a given filetype and use `-D filetype=myfiletype`
+with `kakpipe` inside the plugin to automatically setup the file type of the created fifo buffer. This allows you
+to remove the mkfifo boilerplate, and have syntax highlighting coming directly from the external tool.
+
+The `-n` options allows to use the same buffer at each command invocation. By default kakpipe always open new
+buffer which names are formed by the command name + 1st argument + a timestamp.
 
 ```
 define-command -override -params 1.. -docstring 'launch cargo with the given parameters inside kakoune' cargo %{
