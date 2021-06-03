@@ -392,7 +392,8 @@ dependencies = [
 
 [[package]]
 name = "kak"
-version = "0.1.1"
+version = "0.1.2"
+source = "git+https://github.com/eburghar/kak.rs.git?tag=v0.1.2#5799d1bd4724504e50da98ea60ee4f7351c697a7"
 dependencies = [
  "anyhow",
  "async-std",
@@ -402,7 +403,7 @@ dependencies = [
 
 [[package]]
 name = "kakpipe"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "async-process",

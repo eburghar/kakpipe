@@ -6,7 +6,7 @@
 `kakpipe.kak`, to display text with ansi color codes inside fifo buffers or info boxes.
 
 ```
-kakpipe 0.1.5
+kakpipe 0.1.6
 Utility to display text with ansi color codes inside kakoune fifo buffers or info boxes
 
 USAGE:
