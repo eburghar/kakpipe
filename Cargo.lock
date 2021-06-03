@@ -393,6 +393,7 @@ dependencies = [
 [[package]]
 name = "kak"
 version = "0.1.0"
+source = "git+https://github.com/eburghar/kak.rs.git?branch=main#e798f988b24366c11b3f58ebcc08136651022de7"
 dependencies = [
  "anyhow",
  "async-std",
