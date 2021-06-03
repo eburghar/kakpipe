@@ -6,7 +6,7 @@
 `kakpipe.kak`, to display text with ansi color codes inside fifo buffers or info boxes.
 
 ```
-kakpipe 0.1.4
+kakpipe 0.1.5
 Utility to display text with ansi color codes inside kakoune fifo buffers or info boxes
 
 USAGE:
@@ -94,6 +94,8 @@ Show a rustdoc page in a buffer using [rusty-man](https://git.sr.ht/~ireas/rusty
 
 ### Info boxes
 
+For info boxes you use the `kakpipe` binary inside shell expansions.
+
 Show a calendar in an info box
 
 ```
@@ -151,7 +153,7 @@ You can for instance make a module defining custom mappings for a given filetype
 with `kakpipe` inside the plugin to automatically setup the file type of the created fifo buffer.
 
 The `-n` options allows to use the same buffer (name) at each command invocation. By default kakpipe always open
-new buffer which names are formed by the command name + 1st argument + a timestamp.
+a new buffer which name is `-` separated string of the command name, the 1st argument, and a timestamp.
 
 ```
 define-command -override -params 1.. -docstring 'launch cargo with the given parameters inside kakoune' cargo %{

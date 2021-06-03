@@ -10,7 +10,7 @@ async-process = "1.1.0"
 async-std = { version="1.9.0", features=["unstable"] }
 byteorder = "1.4.3"
 daemonize = "0.4.1"
-kak = { git = "https://github.com/eburghar/kak.rs.git", tag = "v0.1.1" }
+kak = { git = "https://github.com/eburghar/kak.rs.git", tag = "v0.1.2" }
 # kak = { path = "../kak" }
 nix = "0.20.0"
 rand = "0.8.3"

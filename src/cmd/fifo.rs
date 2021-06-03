@@ -173,6 +173,7 @@ pub async fn stdin_fifo(
 			let _ = fifo_file.flush().await;
 			l += 1;
 			start = 1;
+			// println!("{}", &line);
 		}
 	}
 
