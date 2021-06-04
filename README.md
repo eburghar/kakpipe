@@ -161,7 +161,7 @@ define-command -override -params 1.. -docstring 'launch cargo with the given par
 }
 ```
 
-As a proof of concept you can see [the how to use
+As a proof of concept you can see [how to use
 kakpipe](https://gitlab.com/eburghar/kakoune-cargo/-/commit/6acbe146a3476d175594adda20870a39c5db7a1f?view=parallelinside)
 as a replacement of highlighter and mkfifo boilerplate in the useful
 [cargo-kakoune](https://gitlab.com/Screwtapello/kakoune-cargo) plugin.
