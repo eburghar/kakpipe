@@ -161,10 +161,15 @@ define-command -override -params 1.. -docstring 'launch cargo with the given par
 }
 ```
 
+As a proof of concept you can see [the how to use
+kakpipe](https://gitlab.com/eburghar/kakoune-cargo/-/commit/6acbe146a3476d175594adda20870a39c5db7a1f?view=parallelinside)
+as a replacement of highlighter and mkfifo boilerplate in the useful
+[cargo-kakoune](https://gitlab.com/Screwtapello/kakoune-cargo) plugin.
+
 ## References
 
 [kak-ansi](https://github.com/eraserhd/kak-ansi) is a tiny (23K) executable (written in C with no dependencies)
 also targeted at highlighting ansi-codes in buffers, but works by sending selections back and forth to kakoune
 and use temporary files, where kakpipe use unix socket and in memory ring buffer. kak-ansi replaces ansi-codes from
 a buffer, whereas kakpipe sends text without ansi-codes and provides range-specs on a separate unix socket to be
-consumed inside kakoune hooks.
+consumed inside kakoune hooks. kakpipe also works on readonly buffer because it doesn't alter content.
