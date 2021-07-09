@@ -153,7 +153,7 @@ You can for instance make a module defining custom mappings for a given filetype
 with `kakpipe` inside the plugin to automatically setup the file type of the created fifo buffer.
 
 The `-n` options allows to use the same buffer (name) at each command invocation. By default kakpipe always open
-a new buffer which name is `-` separated string of the command name, the 1st argument, and a timestamp.
+a new buffer which name is a '`-`' separated string made of the command name, the 1st argument, and a timestamp.
 
 ```
 define-command -override -params 1.. -docstring 'launch cargo with the given parameters inside kakoune' cargo %{
@@ -161,7 +161,7 @@ define-command -override -params 1.. -docstring 'launch cargo with the given par
 }
 ```
 
-As a proof of concept you can see [how to use
+You can see [how to use
 kakpipe](https://gitlab.com/eburghar/kakoune-cargo/-/compare/b15c75180e8c851c8687c90550746dfedceebbed...master?from_project_id=27156852&view=parallel)
 as a replacement of highlighter and mkfifo boilerplate in the useful
 [kakoune-cargo](https://gitlab.com/Screwtapello/kakoune-cargo) plugin.

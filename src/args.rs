@@ -1,15 +1,16 @@
-use structopt::StructOpt;
-use std::error::Error;
+use anyhow::{anyhow, Result};
+use argh::{FromArgs, TopLevelCommand};
+use std::path::Path;
 
 /// Utility to display text with ansi color codes inside kakoune fifo buffers or info boxes
-#[derive(StructOpt)]
-#[structopt()]
+#[derive(FromArgs)]
 pub struct Args {
-	#[structopt(subcommand)]
+	#[argh(subcommand)]
 	pub mode: Mode,
 }
 
-#[derive(StructOpt)]
+#[derive(FromArgs)]
+#[argh(subcommand)]
 pub enum Mode {
 	Fifo(FifoArgs),
 	RangeSpecs(RangeSpecsArgs),
@@ -17,66 +18,91 @@ pub enum Mode {
 }
 
 /// Parse a single key-value pair
-fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error>>
-where
-    T: std::str::FromStr,
-    T::Err: Error + 'static,
-    U: std::str::FromStr,
-    U::Err: Error + 'static,
-{
-    let pos = s
-        .find('=')
-        .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{}`", s))?;
-    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+pub fn parse_key_val(s: &str) -> Result<(&str, &str)> {
+	let pos = s
+		.find('=')
+		.ok_or_else(|| anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
+	Ok((&s[..pos], &s[pos + 1..]))
 }
 
 /// Return kakoune commands for opening a fifo buffer and initializing highlighters for ansi-codes, then detach itself, forward
 /// command output to the fifo, and serve range-specs definitions through a unix socket that can be consumed to stdout
 /// with the `range-specs` subcommand.
-#[derive(StructOpt)]
+#[derive(FromArgs)]
+#[argh(subcommand, name = "fifo")]
 pub struct FifoArgs {
-	/// Turns the buffer editable. by default they are readonly
-	#[structopt(long, short = "w")]
+	/// turns the buffer editable. by default they are readonly
+	#[argh(switch, short = 'w')]
 	pub rw: bool,
 
 	/// scroll down fifo buffer as new content arrives
-	#[structopt(long, short = "S")]
+	#[argh(switch, short = 'S')]
 	pub scroll: bool,
 
 	/// stderr goes to *debug* buffer instead of fifo
-	#[structopt(long, short = "d")]
+	#[argh(switch, short = 'd')]
 	pub debug: bool,
 
 	/// kakoune session
-	#[structopt(long, short = "s")]
+	#[argh(option, short = 's')]
 	pub session: String,
 
 	/// fifo buffer name
-	#[structopt(long, short = "n")]
+	#[argh(option, short = 'n')]
 	pub name: Option<String>,
 
 	/// options to set with name=value in the buffer scope
-    #[structopt(short = "D", parse(try_from_str = parse_key_val), number_of_values = 1)]
-    pub opts: Vec<(String, String)>,
+	#[argh(option, short = 'D')]
+	pub opts: Vec<String>,
 
-   	/// command to spawn
+	/// command to spawn
+	#[argh(positional)]
 	pub cmd: String,
 
 	// arguments of command
-	pub args: Vec<String>
+	#[argh(positional)]
+	pub args: Vec<String>,
 }
 
-#[derive(StructOpt)]
+#[derive(FromArgs)]
+#[argh(subcommand, name = "range-specs")]
 /// Consume all available range-specs up to a given selection range from a given unix socket.
 pub struct RangeSpecsArgs {
 	/// socket path to get range-specs from
+	#[argh(positional)]
 	pub socket: String,
 
 	/// get range-specs up to range or all available range-specs by default
-	#[structopt(default_value = "0.0,0.0")]
-	pub range: String
+	#[argh(positional, default = "\"0.0,0.0\".to_owned()")]
+	pub range: String,
 }
 
-#[derive(StructOpt)]
+#[derive(FromArgs)]
+#[argh(subcommand, name = "faces")]
 /// Forward stdin to stdout with ansi color codes converted to kakoune face definitions
 pub struct FacesArgs {}
+
+fn cmd<'a>(default: &'a String, path: &'a String) -> &'a str {
+	Path::new(path)
+		.file_name()
+		.map(|s| s.to_str())
+		.flatten()
+		.unwrap_or(default.as_str())
+}
+
+/// copy of argh::from_env to insert command name and version
+pub fn from_env<T: TopLevelCommand>() -> T {
+	const NAME: &'static str = env!("CARGO_PKG_NAME");
+	const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+	let strings: Vec<String> = std::env::args().collect();
+	let cmd = cmd(&strings[0], &strings[0]);
+	let strs: Vec<&str> = strings.iter().map(|s| s.as_str()).collect();
+	T::from_args(&[cmd], &strs[1..]).unwrap_or_else(|early_exit| {
+		println!("{} {}\n", NAME, VERSION);
+		println!("{}", early_exit.output);
+		std::process::exit(match early_exit.status {
+			Ok(()) => 0,
+			Err(()) => 1,
+		})
+	})
+}

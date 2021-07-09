@@ -13,12 +13,16 @@ use async_std::task::block_on;
 use daemonize::Daemonize;
 use nix::{sys::stat, unistd};
 use std::{env, fs, time::SystemTime};
-use structopt::StructOpt;
 
 fn main() -> Result<()> {
-	let args = Args::from_args();
+	let args: Args = args::from_env();
 	match args.mode {
 		Mode::Fifo(args) => {
+			// check -D arguments are well formed
+			for o in args.opts.iter() {
+				args::parse_key_val(o)?;
+			}
+
 			// create random fifo and socket
 			let tmp_dir = env::temp_dir().join("kakpipe");
 			fs::create_dir_all(&tmp_dir)?;
@@ -57,9 +61,11 @@ fn main() -> Result<()> {
 				scroll=if args.scroll { " -scroll" } else { "" },
 			);
 			// set buffer options
-			for (name, value) in &args.opts {
+			args.opts.iter().for_each(|o| {
+				// unwrap is ok because we checked errors upfront
+				let (name, value) = args::parse_key_val(o).unwrap();
 				println!("set-option buffer {} {}", name, value);
-			}
+			});
 
 			// let stdout = fs::File::create("/tmp/daemon.out").unwrap();
 			// let stderr = fs::File::create("/tmp/daemon.err").unwrap();
