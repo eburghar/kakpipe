@@ -6,7 +6,7 @@
 `kakpipe.kak`, to display text with ansi color codes inside fifo buffers or info boxes.
 
 ```
-kakpipe 0.1.6
+kakpipe 0.2.0
 Utility to display text with ansi color codes inside kakoune fifo buffers or info boxes
 
 USAGE:
@@ -37,6 +37,8 @@ workflows without leaving the comfort of your editor and without sacrificing rea
 - `kakpipe-bg` which just do everything in the background.
 
 This utility would be voided if kakoune implements an `-ansi` argument on `edit -fifo` or `info` commands.
+
+You can start long running processes with `kakpipe`. When you close the buffer, the processes are stopped.
 
 ## Installation
 
@@ -90,6 +92,12 @@ Show a rustdoc page in a buffer using [rusty-man](https://git.sr.ht/~ireas/rusty
 
 ```
 :kakpipe -- rusty-man --viewer rich std::string::String
+```
+
+Launch a long running process in a new buffer. Closing the buffer will stop the process
+
+```
+:kakpipe -S -- env FORCE_COLOR=true npm run dev
 ```
 
 ### Info boxes

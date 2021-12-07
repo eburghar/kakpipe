@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use async_process::{Command, Stdio};
 use async_std::{
-	fs::{self, OpenOptions},
+	fs::{self, File, OpenOptions},
 	io::{
 		prelude::{BufReadExt, ReadExt, WriteExt},
 		BufReader,
@@ -89,11 +89,11 @@ pub async fn range_specs(socket: PathBuf, sync: Arc<Mutex<SharedRanges>>) -> Res
 pub async fn stdin_fifo(
 	args: &FifoArgs,
 	fifo: PathBuf,
+	pid: PathBuf,
 	client: &mut Client,
 	sync: Arc<Mutex<SharedRanges>>,
 ) -> Result<()> {
 	// async read from command and async write to fifo
-	let mut fifo_file = OpenOptions::new().write(true).open(fifo).await?;
 
 	let mut child = Command::new(&args.cmd)
 		.args(&args.args)
@@ -102,6 +102,15 @@ pub async fn stdin_fifo(
 		.current_dir(env::current_dir().unwrap())
 		.spawn()?;
 
+	// write the pip of the spawn process to file then dispose it
+	{
+		let mut pid_file = File::create(pid).await?;
+		pid_file
+			.write_all(child.id().to_string().as_bytes())
+			.await?;
+	}
+
+	let mut fifo_file = OpenOptions::new().write(true).open(fifo).await?;
 	let mut stdout_reader = BufReader::new(child.stdout.take().unwrap()).lines();
 	let mut stderr_reader = BufReader::new(child.stderr.take().unwrap()).lines();
 	let mut l = 1; // line number
@@ -187,14 +196,14 @@ pub async fn stdin_fifo(
 	if l >= 1 {
 		Ok(())
 	} else {
-		// return an error to stop all tasks as there is nothing to do
+		// return an error to stop all tasks as there is nothing more to do
 		Err(anyhow!("no output"))
 	}
 }
 
 /// Print kakoune initialization command for displaying the corresponding fifo buffer then
 /// combine stdin_fifo and range_specs
-pub async fn fifo(args: FifoArgs, fifo: PathBuf, socket: PathBuf) -> Result<()> {
+pub async fn fifo(args: FifoArgs, fifo: PathBuf, pid: PathBuf, socket: PathBuf) -> Result<()> {
 	// client connection to kakoune session
 	let mut client = Client::new(&args.session)?;
 	if args.debug {
@@ -209,7 +218,7 @@ pub async fn fifo(args: FifoArgs, fifo: PathBuf, socket: PathBuf) -> Result<()> 
 	// queues after adding or removing ranges, mutex seems to be unavoidable, because we can
 	// produce and consume ranges at the same time and both task needs write access.
 	let sync = Arc::new(Mutex::new(SharedRanges::new()));
-	let task_stdin_fifo = stdin_fifo(&args, fifo, &mut client, Arc::clone(&sync));
+	let task_stdin_fifo = stdin_fifo(&args, fifo, pid, &mut client, Arc::clone(&sync));
 	let task_ranges_specs = range_specs(socket, Arc::clone(&sync));
 	// stops as soon as one future fails
 	task_stdin_fifo.try_join(task_ranges_specs).await?;

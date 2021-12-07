@@ -26,8 +26,16 @@ fn main() -> Result<()> {
 			// create random fifo and socket
 			let tmp_dir = env::temp_dir().join("kakpipe");
 			fs::create_dir_all(&tmp_dir)?;
-			let fifo_path = tmp_dir.join(mktemp(10, ".fifo"));
-			let socket_path = tmp_dir.join(mktemp(10, ".sock"));
+			let tmp_id = mktemp(10);
+			let mut fifo_path = tmp_dir.join(&tmp_id);
+    		fifo_path.set_extension("fifo");
+			let mut socket_path = tmp_dir.join(&tmp_id);
+    		socket_path.set_extension("sock");
+			let mut pipe_pid_path = tmp_dir.join(&tmp_id);
+    		pipe_pid_path.set_extension("pid1");
+			let mut daemon_pid_path = tmp_dir.join(&tmp_id);
+    		daemon_pid_path.set_extension("pid2");
+
 			// Create the unix fifo
 			unistd::mkfifo(&fifo_path, stat::Mode::S_IRWXU)?;
 
@@ -50,11 +58,18 @@ fn main() -> Result<()> {
 			println!(
 				"edit! -fifo {fifo_path}{scroll}{readonly} *{buffer_name}*\n\
 				add-highlighter -override buffer/kakpipe ranges kakpipe_color_ranges\n\
-				hook buffer BufClose \\*{buffer_name}\\* %{{ nop %sh{{ rm -f {fifo_path} }} }}\n\
+				hook buffer BufClose \\*{buffer_name}\\* %{{ nop %sh{{\n
+					test -p {fifo_path} && rm -f {fifo_path}\n
+    				test -S {socket_path} && rm -f {socket_path}\n
+        			test -f {pipe_pid_path} && pid=$(cat {pipe_pid_path}) && rm -f {pipe_pid_path} && test -n $pid && kill $pid\n
+            		test -f {daemon_pid_path} && pid=$(cat {daemon_pid_path}) && rm -f {daemon_pid_path} && test -n $pid && kill $pid\n
+				}} }}\n\
 				try %{{ remove-hooks buffer kakpipe }}\n\
 				hook -group kakpipe buffer BufReadFifo .* %{{ evaluate-commands %sh{{ kakpipe range-specs {socket_path} $kak_hook_param }} }}",
 				fifo_path=fifo_path.to_str().unwrap(),
 				socket_path=socket_path.to_str().unwrap(),
+				pipe_pid_path=pipe_pid_path.to_str().unwrap(),
+				daemon_pid_path=daemon_pid_path.to_str().unwrap(),
 				buffer_name=&buffer_name,
 				// readonly=if args.rw { "" } else { " -readonly"}, // BUG? apparently every buffer turn readonly after this
 				readonly = "",
@@ -72,11 +87,12 @@ fn main() -> Result<()> {
 			let daemon = Daemonize::new()
 				// .stdout(stdout)
 				// .stderr(stderr)
+				.pid_file(&daemon_pid_path)
 				.working_directory(env::current_dir().unwrap());
 			// Detach
 			daemon.start()?;
 			// Concurrently run command, output stdout and stderr to fifo and serve ranges
-			block_on(fifo(args, fifo_path, socket_path))?
+			block_on(fifo(args, fifo_path, pipe_pid_path, socket_path))?
 		}
 		Mode::RangeSpecs(args) => block_on(range_specs(args))?,
 		Mode::Faces(_) => block_on(faces())?,
