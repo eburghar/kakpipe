@@ -50,7 +50,7 @@ fn main() -> Result<()> {
 				// use given prefix is any
 				let mut res = if let Some(prefix) = &args.prefix {
     				prefix.to_owned()
-    			// strip cmd name of dirname
+    			// strip path from cmd
     			} else if let Some(pos) = args.cmd.rfind('/') {
     				if pos + 1 < args.cmd.len() {
         				args.cmd[pos+1..].to_owned()
@@ -60,11 +60,12 @@ fn main() -> Result<()> {
 				} else {
 					args.cmd.clone()
 				};
-				// join all argument that are not switch
+				// join all argument that are not switches
 				for arg in args.args.iter().filter(|s| !s.starts_with('-')) {
 					res.push('-');
 					res.push_str(arg);
 				}
+				// with the stamp
 				res.push('-');
 				res.push_str(&stamp);
 				res

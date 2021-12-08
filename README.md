@@ -6,7 +6,7 @@
 `kakpipe.kak`, to display text with ansi color codes inside fifo buffers or info boxes.
 
 ```
-kakpipe 0.2.0
+kakpipe 0.3.0
 Utility to display text with ansi color codes inside kakoune fifo buffers or info boxes
 
 USAGE:
@@ -25,42 +25,24 @@ SUBCOMMANDS:
     range-specs    Consume all available range-specs up to a given selection range from a given unix socket
 ```
 
-Defining a new command just for interfacing an external tool to kakoune as described in
-[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidoc) feels cumbersome for simple
-workflows, and as fifo doesn't support ansi-code yet, you generally end up using a shell, traveling back and forth
-to kakoune just to launch a command that needs no interaction.
+## Simplify interfacing of external tools
+
+Defining a new command for interfacing external tools to kakoune as described in
+[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidoc) looks like cumbersome for
+simple workflows, and as fifo doesn't support ansi-code yet, you generally end up using a shell, traveling back
+and forth to kakoune just to launch a command that needs no or few interactions.
 
 `kakpipe.kak` defines 2 kakoune commands built on top of `kakpipe fifo` you can use to automate those simples
-workflows without leaving the comfort of your editor and without sacrificing readability:
+workflows without leaving the comfort of your editor and without sacrificing readability by loosing colors and faces:
+
 - `kakpipe` which immediately switch to the buffer and let you see the result of the execution in real time with colors
    rendering and
-- `kakpipe-bg` which just do everything in the background.
+- `kakpipe-bg` which just do the same without switching to the fifo buffer
 
-This utility would be voided if kakoune implements an `-ansi` argument on `edit -fifo` or `info` commands.
-
-You can start long running processes with `kakpipe`. When you close the buffer, the processes are stopped.
-
-`kakpipe` command arguments are forwarded to `kakpipe fifo` executable and you should use `--` to separate
-argument of kakpipe and the command kakpipe fifo will launch (see examples below).
-
-```
-kakpipe 0.3.0
-
-Usage: kakpipe fifo <cmd> [<args...>] [-w] [-S] [-d] -s <session> [-n <name>] [-N <prefix>] [-D <opts...>]
-
-Return kakoune commands for opening a fifo buffer and initializing highlighters for ansi-codes, then detach itself, forward command output to the fifo, and serve range-specs definitions through a unix socket that can be consumed to stdout with the `range-specs` subcommand.
-
-Options:
-  -w, --rw          turns the buffer editable. by default they are readonly
-  -S, --scroll      scroll down fifo buffer as new content arrives
-  -d, --debug       stderr goes to *debug* buffer instead of fifo
-  -s, --session     kakoune session
-  -n, --name        fifo buffer name (default is the command name + args +
-                    timestamp)
-  -N, --prefix      fifo buffer prefix
-  -D, --opts        options to set with name=value in the buffer scope
-  --help            display usage information
-```
+Closing the buffer with `:bd` stops kakpipe and the process, allowing you to (re)launch long running process in
+a background buffer and consult traces or messages with `ga` before going back to edition very quickly. You can also
+add behavior on the fifo buffer by defining a type and some key mapppings (see the section how to integrate kakpipe to
+your module below).
 
 ## Installation
 
@@ -91,6 +73,32 @@ plug "eburghar/kakpipe" do %{
 ## Examples
 
 ### Buffers
+
+`kakpipe` command arguments are forwarded to `kakpipe fifo` executable so you should use `--` to separate
+arguments of the command from the executable ones in your scripts or at the command prompt.
+
+Here are all the accepted arguments by the `kakpipe fifo`
+
+```
+kakpipe 0.3.0
+
+Usage: kakpipe fifo <cmd> [<args...>] [-w] [-S] [-d] -s <session> [-n <name>] [-N <prefix>] [-D <opts...>]
+
+Return kakoune commands for opening a fifo buffer and initializing highlighters for ansi-codes, then detach itself,
+forward command output to the fifo, and serve range-specs definitions through a unix socket that can be consumed
+to stdout with the `range-specs` subcommand.
+
+Options:
+  -w, --rw          turns the buffer editable. by default they are readonly
+  -S, --scroll      scroll down fifo buffer as new content arrives
+  -d, --debug       stderr goes to *debug* buffer instead of fifo
+  -s, --session     kakoune session
+  -n, --name        fifo buffer name (default is the command name + args +
+                    timestamp)
+  -N, --prefix      fifo buffer prefix
+  -D, --opts        options to set with name=value in the buffer scope
+  --help            display usage information
+```
 
 Launch `cargo build` in a new fifo buffer
 
@@ -125,7 +133,18 @@ the process.
 
 ### Info boxes
 
-For info boxes you use the `kakpipe` binary inside shell expansions.
+For info boxes you use the `kakpipe faces` binary inside shell expansions.
+
+```
+kakpipe 0.3.0
+
+Usage: kakpipe faces
+
+Forward stdin to stdout with ansi color codes converted to kakoune face definitions
+
+Options:
+  --help            display usage information
+```
 
 Show a calendar in an info box
 
@@ -194,7 +213,7 @@ define-command -override -params 1.. -docstring 'launch cargo with the given par
 
 You can see [how to use
 kakpipe](https://gitlab.com/eburghar/kakoune-cargo/-/compare/b15c75180e8c851c8687c90550746dfedceebbed...master?from_project_id=27156852&view=parallel)
-as a replacement of highlighter and mkfifo boilerplate in the useful
+as a replacement of highlighter and mkfifo boilerplate in the
 [kakoune-cargo](https://gitlab.com/Screwtapello/kakoune-cargo) plugin.
 
 ## References

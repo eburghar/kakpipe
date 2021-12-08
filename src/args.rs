@@ -47,13 +47,13 @@ pub struct FifoArgs {
 	#[argh(option, short = 's')]
 	pub session: String,
 
-	/// fifo buffer name (default is the command name + args + timestamp)
-	#[argh(option, short = 'n')]
-	pub name: Option<String>,
-
-	/// fifo buffer prefix
+	/// fifo buffer prefix (default is the command name)
 	#[argh(option, short = 'N')]
 	pub prefix: Option<String>,
+
+	/// fifo buffer name (default is prefix + args + timestamp)
+	#[argh(option, short = 'n')]
+	pub name: Option<String>,
 
 	/// options to set with name=value in the buffer scope
 	#[argh(option, short = 'D')]
