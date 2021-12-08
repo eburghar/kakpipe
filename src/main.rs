@@ -28,30 +28,46 @@ fn main() -> Result<()> {
 			fs::create_dir_all(&tmp_dir)?;
 			let tmp_id = mktemp(10);
 			let mut fifo_path = tmp_dir.join(&tmp_id);
-    		fifo_path.set_extension("fifo");
+			fifo_path.set_extension("fifo");
 			let mut socket_path = tmp_dir.join(&tmp_id);
-    		socket_path.set_extension("sock");
+			socket_path.set_extension("sock");
 			let mut pipe_pid_path = tmp_dir.join(&tmp_id);
-    		pipe_pid_path.set_extension("pid1");
+			pipe_pid_path.set_extension("pid1");
 			let mut daemon_pid_path = tmp_dir.join(&tmp_id);
-    		daemon_pid_path.set_extension("pid2");
+			daemon_pid_path.set_extension("pid2");
 
 			// Create the unix fifo
 			unistd::mkfifo(&fifo_path, stat::Mode::S_IRWXU)?;
 
 			// set buffer name
 			let buffer_name = if let Some(name) = &args.name {
-				format!("{}", name)
+				name.to_owned()
 			} else {
 				let stamp = SystemTime::now()
 					.duration_since(SystemTime::UNIX_EPOCH)?
 					.as_secs()
 					.to_string();
-				if args.args.len() > 1 {
-					format!("{}-{}-{}", &args.cmd, &args.args[0], &stamp)
+				// use given prefix is any
+				let mut res = if let Some(prefix) = &args.prefix {
+    				prefix.to_owned()
+    			// strip cmd name of dirname
+    			} else if let Some(pos) = args.cmd.rfind('/') {
+    				if pos + 1 < args.cmd.len() {
+        				args.cmd[pos+1..].to_owned()
+    				} else {
+        				args.cmd.clone()
+    				}
 				} else {
-					format!("{}-{}", &args.cmd, &stamp)
+					args.cmd.clone()
+				};
+				// join all argument that are not switch
+				for arg in args.args.iter().filter(|s| !s.starts_with('-')) {
+					res.push('-');
+					res.push_str(arg);
 				}
+				res.push('-');
+				res.push_str(&stamp);
+				res
 			};
 
 			// write kakoune initialization commands to stdout
