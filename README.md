@@ -30,7 +30,7 @@ Defining a new command just for interfacing an external tool to kakoune as descr
 workflows, and as fifo doesn't support ansi-code yet, you generally end up using a shell, traveling back and forth
 to kakoune just to launch a command that needs no interaction.
 
-`kakpipe.kak` defines 2 kakoune commands built on top of `kakpipe` you can use to automate those simples
+`kakpipe.kak` defines 2 kakoune commands built on top of `kakpipe fifo` you can use to automate those simples
 workflows without leaving the comfort of your editor and without sacrificing readability:
 - `kakpipe` which immediately switch to the buffer and let you see the result of the execution in real time with colors
    rendering and
@@ -39,6 +39,28 @@ workflows without leaving the comfort of your editor and without sacrificing rea
 This utility would be voided if kakoune implements an `-ansi` argument on `edit -fifo` or `info` commands.
 
 You can start long running processes with `kakpipe`. When you close the buffer, the processes are stopped.
+
+`kakpipe` command arguments are forwarded to `kakpipe fifo` executable and you should use `--` to separate
+argument of kakpipe and the command kakpipe fifo will launch (see examples below).
+
+```
+kakpipe 0.3.0
+
+Usage: kakpipe fifo <cmd> [<args...>] [-w] [-S] [-d] -s <session> [-n <name>] [-N <prefix>] [-D <opts...>]
+
+Return kakoune commands for opening a fifo buffer and initializing highlighters for ansi-codes, then detach itself, forward command output to the fifo, and serve range-specs definitions through a unix socket that can be consumed to stdout with the `range-specs` subcommand.
+
+Options:
+  -w, --rw          turns the buffer editable. by default they are readonly
+  -S, --scroll      scroll down fifo buffer as new content arrives
+  -d, --debug       stderr goes to *debug* buffer instead of fifo
+  -s, --session     kakoune session
+  -n, --name        fifo buffer name (default is the command name + args +
+                    timestamp)
+  -N, --prefix      fifo buffer prefix
+  -D, --opts        options to set with name=value in the buffer scope
+  --help            display usage information
+```
 
 ## Installation
 
@@ -94,10 +116,11 @@ Show a rustdoc page in a buffer using [rusty-man](https://git.sr.ht/~ireas/rusty
 :kakpipe -- rusty-man --viewer rich std::string::String
 ```
 
-Launch a long running process in a new buffer. Closing the buffer will stop the process
+Launch a long running process in a new buffer, naming the buffer name `*npm-run-dev*`.  Closing the buffer will stop
+the process.
 
 ```
-:kakpipe -S -- env FORCE_COLOR=true npm run dev
+:kakpipe -S -n npm-run-dev -- env FORCE_COLOR=true npm run dev
 ```
 
 ### Info boxes
