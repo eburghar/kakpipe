@@ -18,7 +18,10 @@ use kak::{
 use std::{convert::TryFrom, env, path::PathBuf, sync::Arc};
 use yew_ansi::get_sgr_segments;
 
-use crate::{args::FifoArgs, range_specs::SharedRanges};
+use crate::{
+	args::{self, FifoArgs},
+	range_specs::SharedRanges,
+};
 
 /// Serve all accumulated range_specs definition to stdout through a unix socket
 pub async fn range_specs(socket: PathBuf, sync: Arc<Mutex<SharedRanges>>) -> Result<()> {
@@ -50,7 +53,7 @@ pub async fn range_specs(socket: PathBuf, sync: Arc<Mutex<SharedRanges>>) -> Res
 			let mut sync = sync.lock().await;
 			// get fifo state and ranges emptyness
 			fifo_end = sync.fifo_end;
-			empty_ranges = sync.ranges.len() == 0;
+			empty_ranges = sync.ranges.is_empty();
 			if !empty_ranges {
 				// return all accumulated ranges lower or equal to selection
 				let mut i = 0;
@@ -69,7 +72,7 @@ pub async fn range_specs(socket: PathBuf, sync: Arc<Mutex<SharedRanges>>) -> Res
 				// remove ranges already sent (for_each consumes the iterator and the drained items)
 				sync.ranges.drain(0..i).for_each(|_| ());
 				// reevaluate ranges emptyness to stop the loop if fifo has been closed
-				empty_ranges = sync.ranges.len() == 0;
+				empty_ranges = sync.ranges.is_empty();
 			}
 		}
 		// eprintln!("response: {}", &response);
@@ -93,16 +96,41 @@ pub async fn stdin_fifo(
 	client: &mut Client,
 	sync: Arc<Mutex<SharedRanges>>,
 ) -> Result<()> {
-	// async read from command and async write to fifo
+	// set environment
+	let envs = args
+		.vars
+		.iter()
+		.filter_map(|s| match args::parse_key_val(s) {
+			(name, Some(value)) => Some((name, value.to_owned())),
+			(name, None) => env::var(name).ok().map(|value| (name, value)),
+		});
 
-	let mut child = Command::new(&args.cmd)
+	let mut fifo_file = OpenOptions::new().write(true).open(fifo).await?;
+
+	// async read from command and async write to fifo
+	let mut cmd = Command::new(&args.cmd);
+	if args.clear_env {
+    	cmd.env_clear();
+	}
+	let child = cmd
+		.envs(envs)
 		.args(&args.args)
 		.stderr(Stdio::piped())
 		.stdout(Stdio::piped())
 		.current_dir(env::current_dir().unwrap())
-		.spawn()?;
+		.spawn();
 
-	// write the pip of the spawn process to file then dispose it
+	// write error message to fifo in case spawn failed
+	if let Err(e) = child {
+		fifo_file.write_all(format!("error running {}: {}", &args.cmd, e).as_bytes()).await?;
+		fifo_file.flush().await?;
+		return Err(e.into())
+	}
+
+	// unwrap is safe at it this point because of the return above
+	let mut child = child.unwrap();
+
+	// write the pid of the spawn process to a file then dispose it
 	{
 		let mut pid_file = File::create(pid).await?;
 		pid_file
@@ -110,7 +138,6 @@ pub async fn stdin_fifo(
 			.await?;
 	}
 
-	let mut fifo_file = OpenOptions::new().write(true).open(fifo).await?;
 	let mut stdout_reader = BufReader::new(child.stdout.take().unwrap()).lines();
 	let mut stderr_reader = BufReader::new(child.stderr.take().unwrap()).lines();
 	let mut l = 1; // line number

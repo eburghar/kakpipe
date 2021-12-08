@@ -1,3 +1,4 @@
+- 0.4.0 - ability to define set, clear and export env var. error message on fifo buffer
 - 0.3.0 - add a argument to fifo to choose buffer prefix
 - 0.2.0 - kill processes when closing buffer. remove temp files
 - 0.1.4 - add -D flag to set option for fifo buffer

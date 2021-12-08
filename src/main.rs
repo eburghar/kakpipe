@@ -8,7 +8,7 @@ use crate::{
 	cmd::{faces::faces, fifo::fifo, range_specs::range_specs},
 	mktemp::mktemp,
 };
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use async_std::task::block_on;
 use daemonize::Daemonize;
 use nix::{sys::stat, unistd};
@@ -20,7 +20,9 @@ fn main() -> Result<()> {
 		Mode::Fifo(args) => {
 			// check -D arguments are well formed
 			for o in args.opts.iter() {
-				args::parse_key_val(o)?;
+				if let (_, None) = args::parse_key_val(o) {
+					return Err(anyhow!("invalid KEY=value: no `=` found in `{}`", o))
+				};
 			}
 
 			// create random fifo and socket
@@ -49,14 +51,14 @@ fn main() -> Result<()> {
 					.to_string();
 				// use given prefix is any
 				let mut res = if let Some(prefix) = &args.prefix {
-    				prefix.to_owned()
-    			// strip path from cmd
-    			} else if let Some(pos) = args.cmd.rfind('/') {
-    				if pos + 1 < args.cmd.len() {
-        				args.cmd[pos+1..].to_owned()
-    				} else {
-        				args.cmd.clone()
-    				}
+					prefix.to_owned()
+				// strip path from cmd
+				} else if let Some(pos) = args.cmd.rfind('/') {
+					if pos + 1 < args.cmd.len() {
+						args.cmd[pos + 1..].to_owned()
+					} else {
+						args.cmd.clone()
+					}
 				} else {
 					args.cmd.clone()
 				};
@@ -88,16 +90,17 @@ fn main() -> Result<()> {
 				pipe_pid_path=pipe_pid_path.to_str().unwrap(),
 				daemon_pid_path=daemon_pid_path.to_str().unwrap(),
 				buffer_name=&buffer_name,
-				// readonly=if args.rw { "" } else { " -readonly"}, // BUG? apparently every buffer turn readonly after this
-				readonly = "",
+				readonly=if args.rw { "" } else { " -readonly"},
 				scroll=if args.scroll { " -scroll" } else { "" },
 			);
 			// set buffer options
-			args.opts.iter().for_each(|o| {
-				// unwrap is ok because we checked errors upfront
-				let (name, value) = args::parse_key_val(o).unwrap();
-				println!("set-option buffer {} {}", name, value);
-			});
+			args.opts
+				.iter()
+				.filter_map(|s| match args::parse_key_val(s) {
+					(name, Some(value)) => Some((name, value)),
+					_ => None,
+				})
+				.for_each(|(name, value)| println!("set-option buffer {} {}", name, value));
 
 			// let stdout = fs::File::create("/tmp/daemon.out").unwrap();
 			// let stderr = fs::File::create("/tmp/daemon.err").unwrap();
