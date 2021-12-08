@@ -1,4 +1,3 @@
-use anyhow::{anyhow, Result};
 use argh::{FromArgs, TopLevelCommand};
 use std::path::Path;
 
@@ -17,12 +16,20 @@ pub enum Mode {
 	Faces(FacesArgs),
 }
 
-/// Parse a single key-value pair
-pub fn parse_key_val(s: &str) -> Result<(&str, &str)> {
-	let pos = s
-		.find('=')
-		.ok_or_else(|| anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
-	Ok((&s[..pos], &s[pos + 1..]))
+/// Split a variable definition in NAME and VALUE
+pub(crate) fn parse_key_val(exp: &str) -> (&str, Option<&str>) {
+	let i = exp.find("=");
+	if let Some(i) = i {
+		// something after =
+		if i + 1 < exp.len() {
+			(&exp[..i], Some(&exp[i + 1..]))
+		// nothing after =
+		} else {
+			(&exp[..i], Some(""))
+		}
+	} else {
+		(exp, None)
+	}
 }
 
 /// Return kakoune commands for opening a fifo buffer and initializing highlighters for ansi-codes, then detach itself, forward
@@ -47,7 +54,7 @@ pub struct FifoArgs {
 	#[argh(option, short = 's')]
 	pub session: String,
 
-	/// fifo buffer prefix (default is the command name)
+	/// fifo buffer name prefix (default is the command name)
 	#[argh(option, short = 'N')]
 	pub prefix: Option<String>,
 
@@ -55,7 +62,15 @@ pub struct FifoArgs {
 	#[argh(option, short = 'n')]
 	pub name: Option<String>,
 
-	/// options to set with name=value in the buffer scope
+	/// clear environment
+	#[argh(switch, short = 'k')]
+	pub clear_env: bool,
+
+	/// environment variables to set (NAME=VALUE)
+	#[argh(option, short = 'V')]
+	pub vars: Vec<String>,
+
+	/// options to set in the buffer scope (NAME=VALUE)
 	#[argh(option, short = 'D')]
 	pub opts: Vec<String>,
 
