@@ -1,5 +1,5 @@
 declare-option -hidden range-specs kakpipe_color_ranges
-declare-option -hidden bool kakpipe_args ""
+declare-option -hidden str kakpipe_args ""
 
 provide-module kakpipe %{
 
