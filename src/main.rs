@@ -21,7 +21,7 @@ fn main() -> Result<()> {
 			// check -D arguments are well formed
 			for o in args.opts.iter() {
 				if let (_, None) = args::parse_key_val(o) {
-					return Err(anyhow!("invalid KEY=value: no `=` found in `{}`", o))
+					return Err(anyhow!("invalid KEY=value: no `=` found in `{}`", o));
 				};
 			}
 
@@ -45,11 +45,12 @@ fn main() -> Result<()> {
 			let buffer_name = if let Some(name) = &args.name {
 				name.to_owned()
 			} else {
+				// create a timestamp
 				let stamp = SystemTime::now()
 					.duration_since(SystemTime::UNIX_EPOCH)?
 					.as_secs()
 					.to_string();
-				// use given prefix is any
+				// use the given prefix is any
 				let mut res = if let Some(prefix) = &args.prefix {
 					prefix.to_owned()
 				// strip path from cmd
@@ -62,34 +63,45 @@ fn main() -> Result<()> {
 				} else {
 					args.cmd.clone()
 				};
-				// join all argument that are not switches
+				// join all argument that are not switches...
 				for arg in args.args.iter().filter(|s| !s.starts_with('-')) {
 					res.push('-');
 					res.push_str(arg);
 				}
-				// with the stamp
+				// ...with the stamp
 				res.push('-');
 				res.push_str(&stamp);
 				res
 			};
 
+			// collect arguments after 'kakpipe fifo'
+			let cmd_args = env::args().skip(2).fold(String::new(), |mut a, ref b| {
+				a.push(' ');
+				a.push_str(b);
+				a
+			});
+
 			// write kakoune initialization commands to stdout
 			println!(
-				"edit! -fifo {fifo_path}{scroll}{readonly} *{buffer_name}*\n\
+				"{close_buffer}\
+    			hook -once global BufOpenFifo \\*{buffer_name}\\* %{{ set-option buffer kakpipe_args %{{{cmd_args}}}\n alias buffer !! kakpipe-restart }}\n\
+    			edit! -fifo {fifo_path}{scroll}{readonly} *{buffer_name}*\n\
 				add-highlighter -override buffer/kakpipe ranges kakpipe_color_ranges\n\
-				hook buffer BufClose \\*{buffer_name}\\* %{{ nop %sh{{\n
-					test -p {fifo_path} && rm -f {fifo_path}\n
-    				test -S {socket_path} && rm -f {socket_path}\n
+				hook -once buffer BufClose \\*{buffer_name}\\* %{{ nop %sh{{\n
         			test -f {pipe_pid_path} && pid=$(cat {pipe_pid_path}) && rm -f {pipe_pid_path} && test -n $pid && kill $pid\n
             		test -f {daemon_pid_path} && pid=$(cat {daemon_pid_path}) && rm -f {daemon_pid_path} && test -n $pid && kill $pid\n
+					test -p {fifo_path} && rm -f {fifo_path}\n
+    				test -S {socket_path} && rm -f {socket_path}\n
 				}} }}\n\
 				try %{{ remove-hooks buffer kakpipe }}\n\
 				hook -group kakpipe buffer BufReadFifo .* %{{ evaluate-commands %sh{{ kakpipe range-specs {socket_path} $kak_hook_param }} }}",
+				close_buffer= if args.close {"delete-buffer\n"} else { ""},
 				fifo_path=fifo_path.to_str().unwrap(),
 				socket_path=socket_path.to_str().unwrap(),
 				pipe_pid_path=pipe_pid_path.to_str().unwrap(),
 				daemon_pid_path=daemon_pid_path.to_str().unwrap(),
 				buffer_name=&buffer_name,
+				cmd_args=&cmd_args,
 				readonly=if args.rw { "" } else { " -readonly"},
 				scroll=if args.scroll { " -scroll" } else { "" },
 			);
