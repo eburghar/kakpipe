@@ -1,6 +1,6 @@
 [package]
 name = "kakpipe"
-version = "0.4.1"
+version = "0.5.0"
 authors = ["Éric BURGHARD <eric@itsufficient.me>"]
 edition = "2018"
 

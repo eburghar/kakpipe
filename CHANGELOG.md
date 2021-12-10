@@ -1,3 +1,4 @@
+- 0.5.0 - define !! command on kakpipe buffer to close it restart with same args
 - 0.4.0 - ability to define set, clear and export env var. error message on fifo buffer
 - 0.3.0 - add a argument to fifo to choose buffer prefix
 - 0.2.0 - kill processes when closing buffer. remove temp files

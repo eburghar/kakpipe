@@ -6,31 +6,36 @@
 `kakpipe.kak`, to display text with ansi color codes inside fifo buffers or info boxes.
 
 ```
-kakpipe 0.4.1
+kakpipe 0.5.0
+
+Usage: kakpipe <command> [<args>]
+
 Utility to display text with ansi color codes inside kakoune fifo buffers or info boxes
 
-USAGE:
-    kakpipe <SUBCOMMAND>
+Options:
+  --help            display usage information
 
-FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
-
-SUBCOMMANDS:
-    faces          Forward stdin to stdout with ansi color codes converted to kakoune face definitions
-    fifo           Return kakoune commands for opening a fifo buffer and initializing highlighters for ansi-codes,
-                   then detach itself, forward command output to the fifo, and serve range-specs definitions through
-                   a unix socket that can be consumed to stdout with the `range-specs` subcommand
-    help           Prints this message or the help of the given subcommand(s)
-    range-specs    Consume all available range-specs up to a given selection range from a given unix socket
+Commands:
+  fifo              Return kakoune commands for opening a fifo buffer and
+                    initializing highlighters for ansi-codes, then detach
+                    itself, forward command output to the fifo, and serve
+                    range-specs definitions through a unix socket that can be
+                    consumed to stdout with the `range-specs` subcommand.
+  range-specs       Consume all available range-specs up to a given selection
+                    range from a given unix socket.
+  faces             Forward stdin to stdout with ansi color codes converted to
+                    kakoune face definitions
 ```
 
 ## Simplify interfacing of external tools
 
-Defining a new command for interfacing external tools to kakoune as described in
+Defining a new command for interfacing external tools with kakoune as described in
 [interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidoc) looks like cumbersome for
-simple workflows, and as fifo doesn't support ansi-code yet, you generally end up using a shell, traveling back
-and forth to kakoune just to launch a command that needs no or few interactions.
+simple workflows, and as fifo doesn't support ansi-code yet, either you have the extra work of defining a new filetype
+and highlighting rules, or you have to accept to see everything in monochrome.
+
+As a result you generally end up using a shell, traveling back and forth to kakoune just to launch a command that
+needs no or few interactions.
 
 `kakpipe.kak` defines 2 kakoune commands built on top of `kakpipe fifo` you can use to automate those simples
 workflows without leaving the comfort of your editor and without sacrificing readability by loosing colors and faces:
@@ -39,11 +44,15 @@ workflows without leaving the comfort of your editor and without sacrificing rea
    rendering and
 - `kakpipe-bg` which just do the same without switching to the fifo buffer
 
-Closing the buffer with `:bd` stops kakpipe and the process. You can (re)launch a long running process in
-a background buffer and consult traces or messages with `ga` or `:b ..` before going back to edition very quickly.
+Now you can launch whatever command in kakoune and quick or fuzzy jump between the buffers.
 
-You can also add behavior on the fifo buffer by defining a type and some key mapppings (see the section how to
-integrate kakpipe to your module below).
+Inside a fifo buffer created by kakpipe, 2 commands speed up your workflows with external commands
+- Closing the buffer with `:bd` stops kakpipe and the process,
+- `:!!` stop (if still running) and restart the same command that created the current fifo buffer.
+
+You can now focus only on adding behavior on the fifo buffer if you need to, by defining a new type and
+some key mapppings. See the section how to integrate kakpipe to your module below and see the forked
+[kakoune-cargo](https://gitlab.com/eburghar/kakoune-cargo) project.
 
 ## Installation
 
@@ -81,17 +90,21 @@ arguments of the command from the executable ones in your scripts or at the comm
 Here are all the accepted arguments by the `kakpipe fifo`
 
 ```
-kakpipe 0.4.1
+kakpipe 0.5.0
 
-Usage: kakpipe fifo <cmd> [<args...>] [-w] [-S] [-d] -s <session> [-N <prefix>] [-n <name>] [-k] [-V <vars...>] [-D <opts...>]
+Usage: kakpipe fifo <cmd> [<args...>] [-c] [-w] [-S] [-d] -s <session> [-N <prefix>] [-n <name>] [-k] [-V <vars...>] [-D <opts...>]
 
-Return kakoune commands for opening a fifo buffer and initializing highlighters for ansi-codes, then detach itself, forward command output to the fifo, and serve range-specs definitions through a unix socket that can be consumed to stdout with the `range-specs` subcommand.
+Return kakoune commands for opening a fifo buffer and initializing highlighters for ansi-codes, then detach itself,
+forward command output to the fifo, and serve range-specs definitions through a unix socket that can be consumed
+to stdout with the `range-specs` subcommand.
 
 Positional Arguments:
   cmd               command to spawn
   args
 
 Options:
+  -c, --close       close current buffer before starting kakpipe (used
+                    internally by !!)
   -w, --rw          turns the buffer editable. by default they are readonly
   -S, --scroll      scroll down fifo buffer as new content arrives
   -d, --debug       stderr goes to *debug* buffer instead of fifo
@@ -99,7 +112,7 @@ Options:
   -N, --prefix      fifo buffer name prefix (default is the command name)
   -n, --name        fifo buffer name (default is prefix + args + timestamp)
   -k, --clear-env   clear environment
-  -V, --vars        environment variables to set (NAME=VALUE) or export (NAME)
+  -V, --vars        environment variables to set (NAME=VALUE)
   -D, --opts        options to set in the buffer scope (NAME=VALUE)
   --help            display usage information
 ```
@@ -128,20 +141,21 @@ Show a rustdoc page in a buffer using [rusty-man](https://git.sr.ht/~ireas/rusty
 :kakpipe -- rusty-man --viewer rich std::string::String
 ```
 
-Launch a long running process in a new buffer with the variable `FORCE_COLOR` exported. Closing the buffer will stop
-the process. You can also use `-k` to cleanup the environment in conjunction with `-V PATH` to reexport explicitely a
-variable.
+Launch a long running process in a new buffer with the variable `FORCE_COLOR` exported.
 
 ```
 :kakpipe -S -V FORCE_COLOR=true -- npm run dev
 ```
+
+Closing the buffer will stop the process. You can also use `-k` to cleanup the environment in conjunction with
+`-V PATH` to reexport explicitely a variable.
 
 ### Info boxes
 
 For info boxes you use the `kakpipe faces` binary inside shell expansions.
 
 ```
-kakpipe 0.4.1
+kakpipe 0.5.0
 
 Usage: kakpipe faces
 

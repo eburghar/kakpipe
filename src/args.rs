@@ -38,6 +38,10 @@ pub(crate) fn parse_key_val(exp: &str) -> (&str, Option<&str>) {
 #[derive(FromArgs)]
 #[argh(subcommand, name = "fifo")]
 pub struct FifoArgs {
+    /// close current buffer before starting kakpipe (used internally by !!)
+    #[argh(switch, short = 'c')]
+	pub close: bool,
+
 	/// turns the buffer editable. by default they are readonly
 	#[argh(switch, short = 'w')]
 	pub rw: bool,
