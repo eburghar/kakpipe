@@ -1,12 +1,15 @@
 # Kakpipe
 
+`kakpipe` is a binary executable meant to be used with the included [kakoune](https://kakoune.org/) module
+`kakpipe.kak` for launching external tools inside colorful fifo buffers, or displaying text with ansi colors in
+info boxes.
+
 ![kakpipe](kakpipe.png?raw=true "colors in kakoune fifo buffer and info box")
 
-`kakpipe` is a binary executable meant to be used with the included [kakoune](https://kakoune.org/) module
-`kakpipe.kak`, to launch external tools inside colorful fifo buffers or display text with ansi color in info boxes.
+[TOC]
 
 ```
-kakpipe 0.5.3
+kakpipe 0.5.4
 
 Usage: kakpipe <command> [<args>]
 
@@ -29,13 +32,15 @@ Commands:
 
 ## Simplify interface with external tools
 
-Defining a new command for an interfacing external tool with kakoune as described in
-[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidoc#interactive-output) looks like
-cumbersome for simple workflows, and as fifo doesn't support ansi-code, either you have the extra work of defining a
-new filetype and highlighting rules on top of boilerplate code, or you have to accept to see everything in monochrome.
+Defining a new command for interfacing external tool with kakoune as described in
+[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidoc#interactive-output) looks
+like cumbersome for simple workflows, and as fifo buffer doesn't support ansi-codes, either you have the extra
+work of defining a new filetype and highlighting rules on top of some boilerplate code, or you have to accept to
+see everything in monochrome.
 
-As a result you generally end up using a shell, traveling back and forth to kakoune just to launch a command because
-it's simpler, but you loose the comfort of staying inside the editor for something that needs no to few interactions.
+As a result you generally end up using a shell, traveling back and forth to kakoune just to launch a command
+because it's simpler, but you loose at the same time the comfort of staying inside the editor for something that
+needs sometimes attention but no to few interactions.
 
 kakpipe tackles theses difficulties and allows you to launch external tools in colorful read-only fifo buffers by
 just giving the command to launch along its arguments.
@@ -94,10 +99,10 @@ plug "eburghar/kakpipe" do %{
 `kakpipe` command arguments are forwarded to `kakpipe fifo` executable so you should use `--` to separate
 arguments of the command from the executable ones in your scripts or at the command prompt.
 
-Here are all the accepted arguments by the `kakpipe fifo`
+Here are all the accepted arguments by `kakpipe fifo`
 
 ```
-kakpipe 0.5.3
+kakpipe 0.5.4
 
 Usage: kakpipe fifo <cmd> [<args...>] [-c] [-w] [-S] [-d] -s <session> [-N <prefix>] [-n <name>] [-k] [-V <vars...>] [-D <opts...>]
 
@@ -111,15 +116,15 @@ Positional Arguments:
 
 Options:
   -c, --close       close current buffer before starting kakpipe (used
-                    internally by !!)
-  -w, --rw          turns the buffer editable. by default they are read-only
+                    internally by :!!)
+  -w, --rw          turns the buffer editable. by default they are readonly
   -S, --scroll      scroll down fifo buffer as new content arrives
   -d, --debug       stderr goes to *debug* buffer instead of fifo
   -s, --session     kakoune session
   -N, --prefix      fifo buffer name prefix (default is the command name)
   -n, --name        fifo buffer name (default is prefix + args + timestamp)
   -k, --clear-env   clear environment
-  -V, --vars        environment variables to set (NAME=VALUE)
+  -V, --vars        environment variables to set (NAME=VALUE) or export (NAME)
   -D, --opts        options to set in the buffer scope (NAME=VALUE)
   --help            display usage information
 ```
@@ -162,7 +167,7 @@ Closing the buffer will stop the process. You can also use `-k` to cleanup the e
 For info boxes you use the `kakpipe faces` binary inside shell expansions.
 
 ```
-kakpipe 0.5.3
+kakpipe 0.5.4
 
 Usage: kakpipe faces
 
