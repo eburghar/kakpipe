@@ -6,7 +6,7 @@
 `kakpipe.kak`, to display text with ansi color codes inside fifo buffers or info boxes.
 
 ```
-kakpipe 0.5.1
+kakpipe 0.5.2
 
 Usage: kakpipe <command> [<args>]
 
@@ -27,32 +27,36 @@ Commands:
                     kakoune face definitions
 ```
 
-## Simplify interfacing of external tools
+## Simplify interface with external tools
 
-Defining a new command for interfacing external tools with kakoune as described in
-[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidoc) looks like cumbersome for
-simple workflows, and as fifo doesn't support ansi-code yet, either you have the extra work of defining a new filetype
-and highlighting rules, or you have to accept to see everything in monochrome.
+Defining a new command for an interfacing external tool with kakoune as described in
+[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidoc#interactive-output) looks like
+cumbersome for simple workflows, and as fifo doesn't support ansi-code, either you have the extra work of defining a
+new filetype and highlighting rules on top of boilerplate code, or you have to accept to see everything in monochrome.
 
-As a result you generally end up using a shell, traveling back and forth to kakoune just to launch a command that
-needs no or few interactions.
+As a result you generally end up using a shell, traveling back and forth to kakoune just to launch a command because
+it's simpler, but you loose the comfort of staying inside the editor for something that needs no to few interactions.
 
-`kakpipe.kak` defines 2 kakoune commands built on top of `kakpipe fifo` you can use to automate those simples
-workflows without leaving the comfort of your editor and without sacrificing readability by loosing colors and faces:
+`kakpipe.kak` defines 2 kakoune commands (oneliners) built on top of `kakpipe fifo` you can use to see execution
+of an external tool inside kakoune read-only buffer by simply giving the command to launch along its arguments, and you
+get colors and faces as a bonus without writing any boilerplate code:
 
-- `kakpipe` which immediately switch to the buffer and let you see the result of the execution in real time with colors
-   rendering and
-- `kakpipe-bg` which just do the same without switching to the fifo buffer
+- `:kakpipe` immediately switch to the buffer and let you see the result of the execution in real time,
+- `:kakpipe-bg` do the same without switching to the fifo buffer
 
-Now you can launch whatever command in kakoune and quick or fuzzy jump between the buffers.
+You can quick or fuzzy jump between the buffers, and inside a fifo buffer created by kakpipe, 2 commands speed
+up your workflows even more comparing to using a shell :
 
-Inside a fifo buffer created by kakpipe, 2 commands speed up your workflows with external commands
 - Closing the buffer with `:bd` stops kakpipe and the process,
 - `:!!` stop (if still running) and restart the same command that created the current fifo buffer.
 
-You can now focus only on adding behavior on the fifo buffer if you need to, by defining a new type and
-some key mapppings. See the section how to integrate kakpipe to your module below and see the forked
-[kakoune-cargo](https://gitlab.com/eburghar/kakoune-cargo) project.
+You can now focus on :
+
+- adding new commands and aliases on top of `:kakpipe` to launch external tools inside kakoune even faster,
+- and/or adding behavior on the fifo buffer, by defining a new type and some key mapppings.
+
+You can see read the section about how to integrate kakpipe to your module below and look at the forked
+[kakoune-cargo](https://gitlab.com/eburghar/kakoune-cargo) module to see how easy it is to replace boilerplate code.
 
 ## Installation
 
@@ -90,7 +94,7 @@ arguments of the command from the executable ones in your scripts or at the comm
 Here are all the accepted arguments by the `kakpipe fifo`
 
 ```
-kakpipe 0.5.1
+kakpipe 0.5.2
 
 Usage: kakpipe fifo <cmd> [<args...>] [-c] [-w] [-S] [-d] -s <session> [-N <prefix>] [-n <name>] [-k] [-V <vars...>] [-D <opts...>]
 
@@ -155,7 +159,7 @@ Closing the buffer will stop the process. You can also use `-k` to cleanup the e
 For info boxes you use the `kakpipe faces` binary inside shell expansions.
 
 ```
-kakpipe 0.5.1
+kakpipe 0.5.2
 
 Usage: kakpipe faces
 
@@ -230,15 +234,18 @@ define-command -override -params 1.. -docstring 'launch cargo with the given par
 }
 ```
 
-You can see [how to use
-kakpipe](https://gitlab.com/eburghar/kakoune-cargo/-/compare/b15c75180e8c851c8687c90550746dfedceebbed...master?from_project_id=27156852&view=parallel)
-as a replacement of highlighter and mkfifo boilerplate in the
+You can see [a
+patch](https://gitlab.com/eburghar/kakoune-cargo/-/compare/b15c75180e8c851c8687c90550746dfedceebbed...master?from_project_id=27156852&view=parallel)
+which shows how to use kakpipe as a replacement of highlighter and mkfifo boilerplate in the
 [kakoune-cargo](https://gitlab.com/Screwtapello/kakoune-cargo) plugin.
 
 ## References
 
 [kak-ansi](https://github.com/eraserhd/kak-ansi) is a tiny (23K) executable (written in C with no dependencies)
-also targeted at highlighting ansi-codes in buffers, but works by sending selections back and forth to kakoune
-and use temporary files, where kakpipe use unix socket and in memory ring buffer. kak-ansi replaces ansi-codes from
-a buffer, whereas kakpipe sends text without ansi-codes and provides range-specs on a separate unix socket to be
-consumed inside kakoune hooks. kakpipe also works on readonly buffer because it doesn't alter content.
+exclusively targeted at highlighting ansi-codes in selections. kak-ansi works by removing ansi-codes from selections
+and adding range-specs to bring color and faces, but as a consequence can only work on read-write buffers and adds
+its own (tiny) layer of boilerplate code to be used in your commands.
+
+kakpipe asynchronously manage process lifecycle and sends text to the fifo that's already stripped out of ansi codes. It provides
+range-specs from a unix socket to be consumed separately, so it works also on readonly buffers, which is the
+default and what command outputs are expected to be.
