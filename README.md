@@ -3,10 +3,10 @@
 ![kakpipe](kakpipe.png?raw=true "colors in kakoune fifo buffer and info box")
 
 `kakpipe` is a binary executable meant to be used with the included [kakoune](https://kakoune.org/) module
-`kakpipe.kak`, to display text with ansi color codes inside fifo buffers or info boxes.
+`kakpipe.kak`, to launch external tools inside colorful fifo buffers or display text with ansi color in info boxes.
 
 ```
-kakpipe 0.5.2
+kakpipe 0.5.3
 
 Usage: kakpipe <command> [<args>]
 
@@ -37,14 +37,17 @@ new filetype and highlighting rules on top of boilerplate code, or you have to a
 As a result you generally end up using a shell, traveling back and forth to kakoune just to launch a command because
 it's simpler, but you loose the comfort of staying inside the editor for something that needs no to few interactions.
 
-`kakpipe.kak` defines 2 kakoune commands (oneliners) built on top of `kakpipe fifo` you can use to see execution
-of an external tool inside kakoune read-only buffer by simply giving the command to launch along its arguments, and you
-get colors and faces as a bonus without writing any boilerplate code:
+kakpipe tackles theses difficulties and allows you to launch external tools in colorful read-only fifo buffers by
+just giving the command to launch along its arguments.
+
+## Usage
+
+`kakpipe.kak` defines 2 kakoune commands (oneliners) built on top of `kakpipe fifo`
 
 - `:kakpipe` immediately switch to the buffer and let you see the result of the execution in real time,
 - `:kakpipe-bg` do the same without switching to the fifo buffer
 
-You can quick or fuzzy jump between the buffers, and inside a fifo buffer created by kakpipe, 2 commands speed
+You can quickly or fuzzyly jump between the buffers, and inside a fifo buffer created by kakpipe 2 commands speed
 up your workflows even more comparing to using a shell :
 
 - Closing the buffer with `:bd` stops kakpipe and the process,
@@ -53,10 +56,10 @@ up your workflows even more comparing to using a shell :
 You can now focus on :
 
 - adding new commands and aliases on top of `:kakpipe` to launch external tools inside kakoune even faster,
-- and/or adding behavior on the fifo buffer, by defining a new type and some key mapppings.
+- and/or adding behavior on the fifo buffer, by defining a new type and some key mappings.
 
-You can see read the section about how to integrate kakpipe to your module below and look at the forked
-[kakoune-cargo](https://gitlab.com/eburghar/kakoune-cargo) module to see how easy it is to replace boilerplate code.
+You can read the section about how to integrate kakpipe to your module below and look at the forked
+[kakoune-cargo](https://gitlab.com/eburghar/kakoune-cargo) module to see how easy it is to simplify existing ones.
 
 ## Installation
 
@@ -94,7 +97,7 @@ arguments of the command from the executable ones in your scripts or at the comm
 Here are all the accepted arguments by the `kakpipe fifo`
 
 ```
-kakpipe 0.5.2
+kakpipe 0.5.3
 
 Usage: kakpipe fifo <cmd> [<args...>] [-c] [-w] [-S] [-d] -s <session> [-N <prefix>] [-n <name>] [-k] [-V <vars...>] [-D <opts...>]
 
@@ -109,7 +112,7 @@ Positional Arguments:
 Options:
   -c, --close       close current buffer before starting kakpipe (used
                     internally by !!)
-  -w, --rw          turns the buffer editable. by default they are readonly
+  -w, --rw          turns the buffer editable. by default they are read-only
   -S, --scroll      scroll down fifo buffer as new content arrives
   -d, --debug       stderr goes to *debug* buffer instead of fifo
   -s, --session     kakoune session
@@ -159,7 +162,7 @@ Closing the buffer will stop the process. You can also use `-k` to cleanup the e
 For info boxes you use the `kakpipe faces` binary inside shell expansions.
 
 ```
-kakpipe 0.5.2
+kakpipe 0.5.3
 
 Usage: kakpipe faces
 
@@ -212,6 +215,12 @@ define-command -params 0.. -docstring 'cargo build' cb %{
 ```
 
 ```
+define-command -docstring 'cargo install in ~/.local/bin' ci %{
+    cargo install --path . --root %sh{ echo -n ~/.local }
+}
+```
+
+```
 define-command -docstring 'cargo install current directory crate to ~/.local/bin' ci %{
 	cargo install --path . --root %sh{ echo -n ~/.local }
 }
@@ -243,9 +252,9 @@ which shows how to use kakpipe as a replacement of highlighter and mkfifo boiler
 
 [kak-ansi](https://github.com/eraserhd/kak-ansi) is a tiny (23K) executable (written in C with no dependencies)
 exclusively targeted at highlighting ansi-codes in selections. kak-ansi works by removing ansi-codes from selections
-and adding range-specs to bring color and faces, but as a consequence can only work on read-write buffers and adds
-its own (tiny) layer of boilerplate code to be used in your commands.
+and adding range-specs to bring color and faces, but as a consequence can only work on read-write buffers. It writes
+to temporaty files and adds its own (tiny) layer of boilerplate code to be used in your commands.
 
-kakpipe asynchronously manage process lifecycle and sends text to the fifo that's already stripped out of ansi codes. It provides
-range-specs from a unix socket to be consumed separately, so it works also on readonly buffers, which is the
-default and what command outputs are expected to be.
+kakpipe asynchronously manage process lifecycle and sends text to the fifo that's already stripped out of ansi
+codes. It provides range-specs from a unix socket to be consumed separately so it works also on read-only buffers,
+(which is the default and what command outputs are expected to be).

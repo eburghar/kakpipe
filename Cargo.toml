@@ -1,6 +1,7 @@
 [package]
 name = "kakpipe"
-version = "0.5.2"
+description = "`kakpipe` is a binary executable meant to be used inside kakoune editor to launch external tools inside colorful fifo buffers or display text with ansi colors in info boxes"
+version = "0.5.3"
 authors = ["Éric BURGHARD <eric@itsufficient.me>"]
 edition = "2018"
 
