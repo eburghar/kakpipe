@@ -9,7 +9,7 @@ info boxes.
 [TOC]
 
 ```
-kakpipe 0.5.4
+kakpipe 0.5.5
 
 Usage: kakpipe <command> [<args>]
 
@@ -33,16 +33,15 @@ Commands:
 ## Simplify interface with external tools
 
 Defining a new command for interfacing external tool with kakoune as described in
-[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidoc#interactive-output) looks
-like cumbersome for simple workflows, and as fifo buffer doesn't support ansi-codes, either you have the extra
-work of defining a new filetype and highlighting rules on top of some boilerplate code, or you have to accept to
-see everything in monochrome.
+[interfacing](https://github.com/mawww/kakoune/blob/master/doc/interfacing.asciidoc#interactive-output) is cumbersome
+for simple workflows, and as fifo buffer doesn't support ansi-codes, either you have the extra work of defining a new
+filetype and highlighting rules on top of some boilerplate code, or you have to accept to see everything in monochrome.
 
 As a result you generally end up using a shell, traveling back and forth to kakoune just to launch a command
-because it's simpler, but you loose at the same time the comfort of staying inside the editor for something that
+because it's simpler. You loose at the same time the comfort of staying inside the editor for something that
 needs sometimes attention but no to few interactions.
 
-kakpipe tackles theses difficulties and allows you to launch external tools in colorful read-only fifo buffers by
+kakpipe tackles theses difficulties and allows you to launch any external tool in colorful read-only fifo buffer by
 just giving the command to launch along its arguments.
 
 ## Usage
@@ -51,6 +50,8 @@ just giving the command to launch along its arguments.
 
 - `:kakpipe` immediately switch to the buffer and let you see the result of the execution in real time,
 - `:kakpipe-bg` do the same without switching to the fifo buffer
+
+On the modeline, `[fifo]` serves as an indicator to see if the process is still running.
 
 You can quickly or fuzzyly jump between the buffers, and inside a fifo buffer created by kakpipe 2 commands speed
 up your workflows even more comparing to using a shell :
@@ -102,7 +103,7 @@ arguments of the command from the executable ones in your scripts or at the comm
 Here are all the accepted arguments by `kakpipe fifo`
 
 ```
-kakpipe 0.5.4
+kakpipe 0.5.5
 
 Usage: kakpipe fifo <cmd> [<args...>] [-c] [-w] [-S] [-d] -s <session> [-N <prefix>] [-n <name>] [-k] [-V <vars...>] [-D <opts...>]
 
@@ -167,7 +168,7 @@ Closing the buffer will stop the process. You can also use `-k` to cleanup the e
 For info boxes you use the `kakpipe faces` binary inside shell expansions.
 
 ```
-kakpipe 0.5.4
+kakpipe 0.5.5
 
 Usage: kakpipe faces
 
@@ -258,8 +259,8 @@ which shows how to use kakpipe as a replacement of highlighter and mkfifo boiler
 [kak-ansi](https://github.com/eraserhd/kak-ansi) is a tiny (23K) executable (written in C with no dependencies)
 exclusively targeted at highlighting ansi-codes in selections. kak-ansi works by removing ansi-codes from selections
 and adding range-specs to bring color and faces, but as a consequence can only work on read-write buffers. It writes
-to temporaty files and adds its own (tiny) layer of boilerplate code to be used in your commands.
+to temporaty files and adds its own (tiny) layer of boilerplate code to be used in your commands and fifo.
 
-kakpipe asynchronously manage process lifecycle and sends text to the fifo that's already stripped out of ansi
-codes. It provides range-specs from a unix socket to be consumed separately so it works also on read-only buffers,
-(which is the default and what command outputs are expected to be).
+kakpipe manage process lifecycle and sends asynchronously its output to the fifo buffer already stripped out
+of ansi codes while providing range-specs from a unix socket to be consumed separately. It works by default on
+read-only buffers because this is what command outputs are expected to be.

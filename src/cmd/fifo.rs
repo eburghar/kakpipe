@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use async_process::{Command, Stdio};
 use async_std::{
-	fs::{self, File, OpenOptions},
+	fs::{File, OpenOptions},
 	io::{
 		prelude::{BufReadExt, ReadExt, WriteExt},
 		BufReader,
@@ -15,7 +15,7 @@ use kak::{
 	command::Client,
 	range::{Pos, Range, Selection},
 };
-use std::{convert::TryFrom, env, path::PathBuf, sync::Arc};
+use std::{convert::TryFrom, env, path::Path, sync::Arc};
 use yew_ansi::get_sgr_segments;
 
 use crate::{
@@ -24,7 +24,7 @@ use crate::{
 };
 
 /// Serve all accumulated range_specs definition to stdout through a unix socket
-pub async fn range_specs(socket: PathBuf, sync: Arc<Mutex<SharedRanges>>) -> Result<()> {
+pub async fn range_specs(socket: &Path, sync: Arc<Mutex<SharedRanges>>) -> Result<()> {
 	let listener = UnixListener::bind(&socket)
 		.await
 		.context("error listening to range_specs socket")?;
@@ -82,8 +82,7 @@ pub async fn range_specs(socket: PathBuf, sync: Arc<Mutex<SharedRanges>>) -> Res
 		}
 	}
 
-	// remove the socket file now that all ranges have been consumed and fifo has been closed
-	fs::remove_file(socket).await?;
+	// at this point all ranges have been consumed and fifo has been closed
 	Ok(())
 }
 
@@ -91,8 +90,8 @@ pub async fn range_specs(socket: PathBuf, sync: Arc<Mutex<SharedRanges>>) -> Res
 /// shared between tasks
 pub async fn stdin_fifo(
 	args: &FifoArgs,
-	fifo: PathBuf,
-	pid: PathBuf,
+	fifo: &Path,
+	pid: &Path,
 	client: &mut Client,
 	sync: Arc<Mutex<SharedRanges>>,
 ) -> Result<()> {
@@ -220,6 +219,7 @@ pub async fn stdin_fifo(
 		sync.fifo_end = true;
 	}
 
+
 	if l >= 1 {
 		Ok(())
 	} else {
@@ -230,7 +230,7 @@ pub async fn stdin_fifo(
 
 /// Print kakoune initialization command for displaying the corresponding fifo buffer then
 /// combine stdin_fifo and range_specs
-pub async fn fifo(args: FifoArgs, fifo: PathBuf, pid: PathBuf, socket: PathBuf) -> Result<()> {
+pub async fn fifo(args: FifoArgs, fifo: &Path, pid: &Path, socket: &Path) -> Result<()> {
 	// client connection to kakoune session
 	let mut client = Client::new(&args.session)?;
 	if args.debug {
@@ -249,6 +249,7 @@ pub async fn fifo(args: FifoArgs, fifo: PathBuf, pid: PathBuf, socket: PathBuf) 
 	let task_ranges_specs = range_specs(socket, Arc::clone(&sync));
 	// stops as soon as one future fails
 	task_stdin_fifo.try_join(task_ranges_specs).await?;
+
 	if args.debug {
 		client
 			.send_command(&format!(

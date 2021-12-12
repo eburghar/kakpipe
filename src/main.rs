@@ -3,16 +3,17 @@ mod cmd;
 mod mktemp;
 mod range_specs;
 
-use crate::{
-	args::{Args, Mode},
-	cmd::{faces::faces, fifo::fifo, range_specs::range_specs},
-	mktemp::mktemp,
-};
-use anyhow::{anyhow, Result};
+use anyhow::{Result, bail};
 use async_std::task::block_on;
 use daemonize::Daemonize;
 use nix::{sys::stat, unistd};
 use std::{env, fs, time::SystemTime};
+
+use crate::{
+	args::{Args, Mode},
+	cmd::{faces::faces, fifo::fifo, range_specs::range_specs},
+	mktemp::{temp_file, temp_dir, temp_id},
+};
 
 fn main() -> Result<()> {
 	let args: Args = args::from_env();
@@ -21,22 +22,17 @@ fn main() -> Result<()> {
 			// check -D arguments are well formed
 			for o in args.opts.iter() {
 				if let (_, None) = args::parse_key_val(o) {
-					return Err(anyhow!("invalid KEY=value: no `=` found in `{}`", o));
+					bail!("invalid KEY=value: no `=` found in `{}`", o);
 				};
 			}
 
 			// create random fifo and socket
-			let tmp_dir = env::temp_dir().join("kakpipe");
-			fs::create_dir_all(&tmp_dir)?;
-			let tmp_id = mktemp(10);
-			let mut fifo_path = tmp_dir.join(&tmp_id);
-			fifo_path.set_extension("fifo");
-			let mut socket_path = tmp_dir.join(&tmp_id);
-			socket_path.set_extension("sock");
-			let mut pipe_pid_path = tmp_dir.join(&tmp_id);
-			pipe_pid_path.set_extension("pid1");
-			let mut daemon_pid_path = tmp_dir.join(&tmp_id);
-			daemon_pid_path.set_extension("pid2");
+			let base = temp_id(10);
+			let tmp_dir = temp_dir("kakpipe")?;
+			let fifo_path = temp_file(&tmp_dir, &base, "fifo")?;
+			let socket_path = temp_file(&tmp_dir, &base, "sock")?;
+			let pipe_pid_path = temp_file(&tmp_dir, &base, "pid1")?;
+			let daemon_pid_path = temp_file(&tmp_dir, &base, "pid2")?;
 
 			// Create the unix fifo
 			unistd::mkfifo(&fifo_path, stat::Mode::S_IRWXU)?;
@@ -88,13 +84,13 @@ fn main() -> Result<()> {
     			edit! -fifo {fifo_path}{scroll}{readonly} *{buffer_name}*\n\
 				add-highlighter -override buffer/kakpipe ranges kakpipe_color_ranges\n\
 				hook -once buffer BufClose \\*{buffer_name}\\* %{{ nop %sh{{\n
-        			test -f {pipe_pid_path} && pid=$(cat {pipe_pid_path}) && rm -f {pipe_pid_path} && test -n $pid && kill $pid\n
-            		test -f {daemon_pid_path} && pid=$(cat {daemon_pid_path}) && rm -f {daemon_pid_path} && test -n $pid && kill $pid\n
+        			test -f {pipe_pid_path} && pid=$(cat {pipe_pid_path}) && rm -f {pipe_pid_path} && test -n $pid && kill $pid >/dev/null 2>&1\n
+            		test -f {daemon_pid_path} && pid=$(cat {daemon_pid_path}) && rm -f {daemon_pid_path} && test -n $pid && kill $pid >/dev/null 2>&1\n
 					test -p {fifo_path} && rm -f {fifo_path}\n
     				test -S {socket_path} && rm -f {socket_path}\n
 				}} }}\n\
 				try %{{ remove-hooks buffer kakpipe }}\n\
-				hook -group kakpipe buffer BufReadFifo .* %{{ evaluate-commands %sh{{ kakpipe range-specs {socket_path} $kak_hook_param }} }}",
+				hook -group kakpipe buffer BufReadFifo .* %{{ evaluate-commands %sh{{ test -S {socket_path} && kakpipe range-specs {socket_path} $kak_hook_param }} }}",
 				close_buffer= if args.close {"delete-buffer\n"} else { ""},
 				fifo_path=fifo_path.to_str().unwrap(),
 				socket_path=socket_path.to_str().unwrap(),
@@ -124,7 +120,14 @@ fn main() -> Result<()> {
 			// Detach
 			daemon.start()?;
 			// Concurrently run command, output stdout and stderr to fifo and serve ranges
-			block_on(fifo(args, fifo_path, pipe_pid_path, socket_path))?
+			let res = block_on(fifo(args, &fifo_path, &pipe_pid_path, &socket_path));
+
+			// remove silently temp files
+			let _ = fs::remove_file(socket_path);
+			let _ = fs::remove_file(pipe_pid_path);
+			let _ = fs::remove_file(daemon_pid_path);
+
+			res?
 		}
 		Mode::RangeSpecs(args) => block_on(range_specs(args))?,
 		Mode::Faces(_) => block_on(faces())?,
