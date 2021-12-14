@@ -9,7 +9,7 @@ info boxes.
 [TOC]
 
 ```
-kakpipe 0.5.5
+kakpipe 0.5.6
 
 Usage: kakpipe <command> [<args>]
 
@@ -103,7 +103,7 @@ arguments of the command from the executable ones in your scripts or at the comm
 Here are all the accepted arguments by `kakpipe fifo`
 
 ```
-kakpipe 0.5.5
+kakpipe 0.5.6
 
 Usage: kakpipe fifo <cmd> [<args...>] [-c] [-w] [-S] [-d] -s <session> [-N <prefix>] [-n <name>] [-k] [-V <vars...>] [-D <opts...>]
 
@@ -168,7 +168,7 @@ Closing the buffer will stop the process. You can also use `-k` to cleanup the e
 For info boxes you use the `kakpipe faces` binary inside shell expansions.
 
 ```
-kakpipe 0.5.5
+kakpipe 0.5.6
 
 Usage: kakpipe faces
 

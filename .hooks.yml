@@ -1,0 +1,8 @@
+repos:
+  - url: https://git.itsufficient.me/templates/git-rust-hooks.git
+hooks:
+  - name: cargo fmt
+  - name: cargo check
+  - name: cargo test
+  - name: cargo clippy
+  - name: version_match
