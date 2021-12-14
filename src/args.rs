@@ -38,8 +38,8 @@ pub(crate) fn parse_key_val(exp: &str) -> (&str, Option<&str>) {
 #[derive(FromArgs)]
 #[argh(subcommand, name = "fifo")]
 pub struct FifoArgs {
-    /// close current buffer before starting kakpipe (used internally by :!!)
-    #[argh(switch, short = 'c')]
+	/// close current buffer before starting kakpipe (used internally by :!!)
+	#[argh(switch, short = 'c')]
 	pub close: bool,
 
 	/// turns the buffer editable. by default they are readonly
@@ -70,7 +70,7 @@ pub struct FifoArgs {
 	#[argh(switch, short = 'k')]
 	pub clear_env: bool,
 
-	/// environment variables to set (NAME=VALUE) or export (NAME)
+	/// environment variables to set (NAME=VALUE) or to export (NAME)
 	#[argh(option, short = 'V')]
 	pub vars: Vec<String>,
 

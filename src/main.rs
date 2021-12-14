@@ -3,7 +3,7 @@ mod cmd;
 mod mktemp;
 mod range_specs;
 
-use anyhow::{Result, bail};
+use anyhow::{bail, Result};
 use async_std::task::block_on;
 use daemonize::Daemonize;
 use nix::{sys::stat, unistd};
@@ -12,7 +12,7 @@ use std::{env, fs, time::SystemTime};
 use crate::{
 	args::{Args, Mode},
 	cmd::{faces::faces, fifo::fifo, range_specs::range_specs},
-	mktemp::{temp_file, temp_dir, temp_id},
+	mktemp::{temp_dir, temp_file, temp_id},
 };
 
 fn main() -> Result<()> {
@@ -26,7 +26,7 @@ fn main() -> Result<()> {
 				};
 			}
 
-			// create random fifo and socket
+			// create random fifo, socket and pid files
 			let base = temp_id(10);
 			let tmp_dir = temp_dir("kakpipe")?;
 			let fifo_path = temp_file(&tmp_dir, &base, "fifo")?;
@@ -122,6 +122,8 @@ fn main() -> Result<()> {
 			// Concurrently run command, output stdout and stderr to fifo and serve ranges
 			let res = block_on(fifo(args, &fifo_path, &pipe_pid_path, &socket_path));
 
+			// at this point fifo is closed. remove it
+			let _ = fs::remove_file(fifo_path);
 			// remove silently temp files
 			let _ = fs::remove_file(socket_path);
 			let _ = fs::remove_file(pipe_pid_path);

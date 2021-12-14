@@ -109,7 +109,7 @@ pub async fn stdin_fifo(
 	// async read from command and async write to fifo
 	let mut cmd = Command::new(&args.cmd);
 	if args.clear_env {
-    	cmd.env_clear();
+		cmd.env_clear();
 	}
 	let child = cmd
 		.envs(envs)
@@ -121,9 +121,11 @@ pub async fn stdin_fifo(
 
 	// write error message to fifo in case spawn failed
 	if let Err(e) = child {
-		fifo_file.write_all(format!("error running {}: {}", &args.cmd, e).as_bytes()).await?;
+		fifo_file
+			.write_all(format!("error running {}: {}", &args.cmd, e).as_bytes())
+			.await?;
 		fifo_file.flush().await?;
-		return Err(e.into())
+		return Err(e.into());
 	}
 
 	// unwrap is safe at it this point because of the return above
@@ -182,8 +184,8 @@ pub async fn stdin_fifo(
 			Ok::<(), anyhow::Error>(())
 		};
 
-		// read from stdout and stderr concurrently
-		fifo_task.try_race(debug_task).await?;
+		// wait for stdout and stderr to complete. stop all if one fails
+		fifo_task.try_join(debug_task).await?;
 	} else {
 		// TODO: deduplicate code with generics ?
 		// TODO: we probably lose one line if both stdout and stderr completes at the same time
@@ -219,7 +221,7 @@ pub async fn stdin_fifo(
 		sync.fifo_end = true;
 	}
 
-
+	// ok if some lines have been written
 	if l >= 1 {
 		Ok(())
 	} else {
@@ -247,7 +249,7 @@ pub async fn fifo(args: FifoArgs, fifo: &Path, pid: &Path, socket: &Path) -> Res
 	let sync = Arc::new(Mutex::new(SharedRanges::new()));
 	let task_stdin_fifo = stdin_fifo(&args, fifo, pid, &mut client, Arc::clone(&sync));
 	let task_ranges_specs = range_specs(socket, Arc::clone(&sync));
-	// stops as soon as one future fails
+	// wait for all tasks to complete. stops as soon as one future fails
 	task_stdin_fifo.try_join(task_ranges_specs).await?;
 
 	if args.debug {

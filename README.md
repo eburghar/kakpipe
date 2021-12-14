@@ -51,7 +51,7 @@ just giving the command to launch along its arguments.
 - `:kakpipe` immediately switch to the buffer and let you see the result of the execution in real time,
 - `:kakpipe-bg` do the same without switching to the fifo buffer
 
-On the modeline, `[fifo]` serves as an indicator to see if the process is still running.
+On the status line, `[fifo]` serves as an indicator to see if the process is still running.
 
 You can quickly or fuzzyly jump between the buffers, and inside a fifo buffer created by kakpipe 2 commands speed
 up your workflows even more comparing to using a shell :

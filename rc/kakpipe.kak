@@ -12,7 +12,7 @@ define-command -docstring "Forwards outputs of the command given as parameter to
 }
 
 define-command -hidden -docstring "Close buffer and restart kakpipe on a kakpipe created buffer" kakpipe-restart %{
-    evaluate-commands %sh{ [ -n "$kak_opt_kakpipe_args" ] && eval exec kakpipe fifo -c "$kak_opt_kakpipe_args" || echo nop }
+    evaluate-commands %sh{ test -n "$kak_opt_kakpipe_args" && eval exec kakpipe fifo -c "$kak_opt_kakpipe_args" || echo nop }
 }
 
 }

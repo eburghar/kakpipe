@@ -1,9 +1,13 @@
+use anyhow::{bail, Result};
 use rand::{
 	distributions::Alphanumeric,
 	{thread_rng, Rng},
 };
-use std::{env, fs::create_dir_all, path::{Path, PathBuf}};
-use anyhow::{bail, Result};
+use std::{
+	env,
+	fs::create_dir_all,
+	path::{Path, PathBuf},
+};
 
 /// return random 10 chars string
 pub fn temp_id(len: usize) -> String {
@@ -18,10 +22,10 @@ pub fn temp_id(len: usize) -> String {
 pub fn temp_file(path: &Path, name: &str, ext: &str) -> Result<PathBuf> {
 	let mut res = path.join(name);
 	if res.set_extension(ext) {
-    	Ok(res)
-    } else {
-        bail!("Failed to create {:?}/{}.{}", path, name, ext)
-    }
+		Ok(res)
+	} else {
+		bail!("Failed to create {:?}/{}.{}", path, name, ext)
+	}
 }
 
 pub fn temp_dir(basename: &str) -> Result<PathBuf> {
