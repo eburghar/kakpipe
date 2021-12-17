@@ -155,6 +155,12 @@ Show a rustdoc page in a buffer using [rusty-man](https://git.sr.ht/~ireas/rusty
 :kakpipe -- rusty-man --viewer rich std::string::String
 ```
 
+Launch a one-liner script
+
+```
+kakpipe -S -N alive -- sh -c 'while true; do echo -e "\e[32malive !"; sleep 1; done'
+```
+
 Launch a long running process in a new buffer with the variable `FORCE_COLOR` exported.
 
 ```
