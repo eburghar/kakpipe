@@ -9,7 +9,7 @@ info boxes.
 [TOC]
 
 ```
-kakpipe 0.5.6
+kakpipe 0.5.7
 
 Usage: kakpipe <command> [<args>]
 
@@ -103,7 +103,7 @@ arguments of the command from the executable ones in your scripts or at the comm
 Here are all the accepted arguments by `kakpipe fifo`
 
 ```
-kakpipe 0.5.6
+kakpipe 0.5.7
 
 Usage: kakpipe fifo <cmd> [<args...>] [-c] [-w] [-S] [-d] -s <session> [-N <prefix>] [-n <name>] [-k] [-V <vars...>] [-D <opts...>]
 
@@ -123,9 +123,10 @@ Options:
   -d, --debug       stderr goes to *debug* buffer instead of fifo
   -s, --session     kakoune session
   -N, --prefix      fifo buffer name prefix (default is the command name)
-  -n, --name        fifo buffer name (default is prefix + args + timestamp)
+  -n, --name        fifo buffer name (default is prefix + temporary id)
   -k, --clear-env   clear environment
-  -V, --vars        environment variables to set (NAME=VALUE) or export (NAME)
+  -V, --vars        environment variables to set (NAME=VALUE) or to export
+                    (NAME)
   -D, --opts        options to set in the buffer scope (NAME=VALUE)
   --help            display usage information
 ```
@@ -168,7 +169,7 @@ Closing the buffer will stop the process. You can also use `-k` to cleanup the e
 For info boxes you use the `kakpipe faces` binary inside shell expansions.
 
 ```
-kakpipe 0.5.6
+kakpipe 0.5.7
 
 Usage: kakpipe faces
 
@@ -240,8 +241,10 @@ command line arguments to setup options values in the fifo buffer scope.
 You can for instance make a module defining custom mappings for a given filetype and use `-D filetype=myfiletype`
 with `kakpipe` inside the plugin to automatically setup the file type of the created fifo buffer.
 
-The `-n` options allows to use the same buffer (name) at each command invocation. By default kakpipe always open
-a new buffer which name is a '`-`' separated string made of the command name, the 1st argument, and a timestamp.
+The `-n` options allows to use the same buffer (name) at each command invocation. By default kakpipe open a new
+buffer which name is a '`-`' separated string made of the command name (or the prefix given with `-N`) and a
+random id. The random id is also used as a prefix for all temporary files that are generated in `/tmp/kakpipe/`
+(socket, fifo and pid files).
 
 ```
 define-command -override -params 1.. -docstring 'launch cargo with the given parameters inside kakoune' cargo %{

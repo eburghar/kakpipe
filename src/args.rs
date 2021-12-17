@@ -62,7 +62,7 @@ pub struct FifoArgs {
 	#[argh(option, short = 'N')]
 	pub prefix: Option<String>,
 
-	/// fifo buffer name (default is prefix + args + timestamp)
+	/// fifo buffer name (default is prefix + temporary id)
 	#[argh(option, short = 'n')]
 	pub name: Option<String>,
 
@@ -115,13 +115,11 @@ fn cmd<'a>(default: &'a str, path: &'a str) -> &'a str {
 
 /// copy of argh::from_env to insert command name and version
 pub fn from_env<T: TopLevelCommand>() -> T {
-	const NAME: &str = env!("CARGO_PKG_NAME");
-	const VERSION: &str = env!("CARGO_PKG_VERSION");
 	let strings: Vec<String> = std::env::args().collect();
 	let cmd = cmd(&strings[0], &strings[0]);
 	let strs: Vec<&str> = strings.iter().map(|s| s.as_str()).collect();
 	T::from_args(&[cmd], &strs[1..]).unwrap_or_else(|early_exit| {
-		println!("{} {}\n", NAME, VERSION);
+		println!("{} {}\n", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 		println!("{}", early_exit.output);
 		std::process::exit(match early_exit.status {
 			Ok(()) => 0,

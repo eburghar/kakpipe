@@ -7,7 +7,7 @@ use anyhow::{bail, Result};
 use async_std::task::block_on;
 use daemonize::Daemonize;
 use nix::{sys::stat, unistd};
-use std::{env, fs, time::SystemTime};
+use std::{env, fs};
 
 use crate::{
 	args::{Args, Mode},
@@ -41,15 +41,10 @@ fn main() -> Result<()> {
 			let buffer_name = if let Some(name) = &args.name {
 				name.to_owned()
 			} else {
-				// create a timestamp
-				let stamp = SystemTime::now()
-					.duration_since(SystemTime::UNIX_EPOCH)?
-					.as_secs()
-					.to_string();
 				// use the given prefix is any
 				let mut res = if let Some(prefix) = &args.prefix {
 					prefix.to_owned()
-				// strip path from cmd
+				// or use command instead
 				} else if let Some(pos) = args.cmd.rfind('/') {
 					if pos + 1 < args.cmd.len() {
 						args.cmd[pos + 1..].to_owned()
@@ -59,15 +54,10 @@ fn main() -> Result<()> {
 				} else {
 					args.cmd.clone()
 				};
-				// join all argument that are not switches...
-				for arg in args.args.iter().filter(|s| !s.starts_with('-')) {
-					res.push('-');
-					res.push_str(arg);
-				}
-				// ...with the stamp
+				// append the base
 				res.push('-');
-				res.push_str(&stamp);
-				res
+				res.push_str(&base);
+				res.replace("{", "").replace("}", "")
 			};
 
 			// collect arguments after 'kakpipe fifo'
@@ -80,10 +70,10 @@ fn main() -> Result<()> {
 			// write kakoune initialization commands to stdout
 			println!(
 				"{close_buffer}\
-    			hook -once global BufOpenFifo \\*{buffer_name}\\* %{{ set-option buffer kakpipe_args %{{{cmd_args}}}\n alias buffer !! kakpipe-restart }}\n\
-    			edit! -fifo {fifo_path}{scroll}{readonly} *{buffer_name}*\n\
+    			hook -once global BufOpenFifo %{{\\*{buffer_name}\\*}} %{{ set-option buffer kakpipe_args %{{{cmd_args}}}\n alias buffer !! kakpipe-restart }}\n\
+    			edit! -fifo {fifo_path}{scroll}{readonly} %{{*{buffer_name}*}}\n\
 				add-highlighter -override buffer/kakpipe ranges kakpipe_color_ranges\n\
-				hook -once buffer BufClose \\*{buffer_name}\\* %{{ nop %sh{{\n
+				hook -once buffer BufClose %{{\\*{buffer_name}\\*}} %{{ nop %sh{{\n
         			test -f {pipe_pid_path} && pid=$(cat {pipe_pid_path}) && rm -f {pipe_pid_path} && test -n $pid && kill $pid >/dev/null 2>&1\n
             		test -f {daemon_pid_path} && pid=$(cat {daemon_pid_path}) && rm -f {daemon_pid_path} && test -n $pid && kill $pid >/dev/null 2>&1\n
 					test -p {fifo_path} && rm -f {fifo_path}\n
