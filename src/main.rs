@@ -70,14 +70,14 @@ fn main() -> Result<()> {
 			// write kakoune initialization commands to stdout
 			println!(
 				"{close_buffer}\
-    			hook -once global BufOpenFifo %{{\\*{buffer_name}\\*}} %{{ set-option buffer kakpipe_args %{{{cmd_args}}}\n alias buffer !! kakpipe-restart }}\n\
-    			edit! -fifo {fifo_path}{scroll}{readonly} %{{*{buffer_name}*}}\n\
+				hook -once global BufOpenFifo %{{\\*{buffer_name}\\*}} %{{ set-option buffer kakpipe_args %{{{cmd_args}}}\n alias buffer !! kakpipe-restart }}\n\
+				edit! -fifo {fifo_path}{scroll}{readonly} %{{*{buffer_name}*}}\n\
 				add-highlighter -override buffer/kakpipe ranges kakpipe_color_ranges\n\
 				hook -once buffer BufClose %{{\\*{buffer_name}\\*}} %{{ nop %sh{{\n
-        			test -f {pipe_pid_path} && pid=$(cat {pipe_pid_path}) && rm -f {pipe_pid_path} && test -n $pid && kill $pid >/dev/null 2>&1\n
-            		test -f {daemon_pid_path} && pid=$(cat {daemon_pid_path}) && rm -f {daemon_pid_path} && test -n $pid && kill $pid >/dev/null 2>&1\n
+					test -f {pipe_pid_path} && pid=$(cat {pipe_pid_path}) && rm -f {pipe_pid_path} && test -n $pid && kill $pid >/dev/null 2>&1\n
+					test -f {daemon_pid_path} && pid=$(cat {daemon_pid_path}) && rm -f {daemon_pid_path} && test -n $pid && kill $pid >/dev/null 2>&1\n
 					test -p {fifo_path} && rm -f {fifo_path}\n
-    				test -S {socket_path} && rm -f {socket_path}\n
+					test -S {socket_path} && rm -f {socket_path}\n
 				}} }}\n\
 				try %{{ remove-hooks buffer kakpipe }}\n\
 				hook -group kakpipe buffer BufReadFifo .* %{{ evaluate-commands %sh{{ test -S {socket_path} && kakpipe range-specs {socket_path} $kak_hook_param }} }}",
